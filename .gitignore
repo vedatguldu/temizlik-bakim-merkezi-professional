@@ -1,0 +1,19 @@
+# Build outputs
+bin/
+obj/
+publish/
+artifacts/
+
+# IDE
+.vs/
+.vscode/
+*.user
+*.suo
+
+# Logs and temp
+*.log
+*.tmp
+
+# OS files
+Thumbs.db
+desktop.ini

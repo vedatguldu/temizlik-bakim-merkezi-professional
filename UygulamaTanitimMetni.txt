@@ -1,0 +1,28 @@
+TEMİZLİK VE BAKIM MERKEZİ v3
+
+Vedat Güldü tarafından, Olcay Aşçı anısına geliştirilen Temizlik ve Bakım Merkezi v3; Windows bakım süreçlerini güvenli, erişilebilir ve kullanıcı dostu bir masaüstü deneyimine dönüştürür.
+
+Uygulama; gereksiz dosya temizliği, ağ ve DNS bakım işlemleri, sistem tanılama, raporlama, yedekleme ve analiz gibi kritik adımları tek merkezde birleştirir. Karmaşık komut satırı akışlarını sade butonlara dönüştürerek hem ileri seviye kullanıcılar hem de teknik detaya boğulmak istemeyen kullanıcılar için güçlü bir çözüm sunar.
+
+ÖNE ÇIKAN DEĞERLER
+- Erişilebilirlik odaklı tasarım: Alt menü navigasyonu, ekran okuyucu canlı anonsları, klavye erişimi ve yüksek okunabilirlik.
+- WCAG AAA hedefli tema sistemi: Aydınlık ve karanlık tema seçenekleri, çoklu kontrast ölçümü ile denetlenebilir görünüm.
+- Güvenli bakım yaklaşımı: Seçmeli görevler, durum anonsu, canlı günlük ve ayrıntılı işlem takibi.
+- Raporlama ve sürdürülebilirlik: JSON raporları, trend analizi, destek paketi ve bakım geçmişi.
+
+V3 EKSTRA 9 ÖZELLİK
+1) Başlangıç Uygulamaları Raporu
+2) RAM ve Süreç Anlık Görünümü
+3) Disk Sağlık Özeti
+4) Temp Boyut Analizi
+5) DNS Çoklu Gecikme Testi
+6) Hosts Dosyasını Yedekleme
+7) Son 24 Saat Hata Özeti
+8) Başlangıç Etki Analizi
+9) Bakım Özetini Panoya Kopyalama
+
+KURULUM VE DAĞITIM KOLAYLIĞI
+Self-contained yayın ve erişilebilir setup paketi sayesinde son kullanıcı tarafında ekstra kurulum ihtiyacı minimuma indirilmiştir. Uygulama, kurulumdan sonra doğrudan kullanılabilecek şekilde paketlenir.
+
+İTHAF
+Bu çalışma, kullanıcıyı merkeze alan teknoloji anlayışını, erişilebilirliği ve kapsayıcı tasarımı odağa alan yaklaşımı yaşatmak amacıyla; Olcay Aşçı anısına saygıyla sunulmuştur.

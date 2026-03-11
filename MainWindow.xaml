@@ -1,0 +1,609 @@
+<Window x:Class="TemizlikMasaUygulamasi.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="Temizlik ve Bakım Merkezi Professional v3.1"
+        Height="900"
+        Width="1450"
+        MinHeight="760"
+        MinWidth="1180"
+        Loaded="Window_Loaded"
+        KeyDown="Window_KeyDown"
+        FontSize="18"
+        FontFamily="Segoe UI"
+        AutomationProperties.Name="Temizlik ve Bakım Merkezi Professional v3.1 penceresi"
+        AutomationProperties.HelpText="Alt menü tabanlı, erişilebilir ve gelişmiş bakım uygulaması.">
+    <Window.Resources>
+        <SolidColorBrush x:Key="AppBackgroundBrush" Color="#F6F8FC" />
+        <SolidColorBrush x:Key="SurfaceBrush" Color="#FFFFFF" />
+        <SolidColorBrush x:Key="PanelBrush" Color="#E8EDF8" />
+        <SolidColorBrush x:Key="PrimaryTextBrush" Color="#111111" />
+        <SolidColorBrush x:Key="SecondaryTextBrush" Color="#1F2937" />
+        <SolidColorBrush x:Key="AccentBrush" Color="#004A7C" />
+        <SolidColorBrush x:Key="AccentTextBrush" Color="#FFFFFF" />
+        <SolidColorBrush x:Key="BorderBrushStrong" Color="#314158" />
+
+        <Style TargetType="Border">
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrushStrong}" />
+            <Setter Property="BorderThickness" Value="1.5" />
+        </Style>
+
+        <Style TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+        </Style>
+
+        <Style TargetType="Button">
+            <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}" />
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrushStrong}" />
+            <Setter Property="BorderThickness" Value="1.5" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Padding" Value="8" />
+            <Setter Property="MinHeight" Value="42" />
+        </Style>
+
+        <Style TargetType="CheckBox">
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+        </Style>
+
+        <Style TargetType="TextBox">
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+            <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrushStrong}" />
+            <Setter Property="BorderThickness" Value="1.5" />
+        </Style>
+
+        <Style TargetType="ComboBox">
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+            <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrushStrong}" />
+            <Setter Property="BorderThickness" Value="1.5" />
+        </Style>
+
+        <Style TargetType="ListBox">
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+            <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrushStrong}" />
+            <Setter Property="BorderThickness" Value="1.5" />
+        </Style>
+    </Window.Resources>
+    <Grid x:Name="RootGrid" Margin="14">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Border x:Name="HeaderBorder" Grid.Row="0" CornerRadius="14" Padding="14" Margin="0,0,0,10">
+            <DockPanel LastChildFill="True">
+                <StackPanel DockPanel.Dock="Left">
+                    <TextBlock Text="Temizlik ve Bakım Merkezi Professional"
+                               FontSize="34"
+                               FontWeight="Bold"
+                               AutomationProperties.Name="Uygulama başlığı" />
+                    <TextBlock x:Name="HeaderVersionText"
+                               Margin="0,2,0,0"
+                               FontWeight="SemiBold"
+                               Text="Sürüm 3.1.0" />
+                    <TextBlock x:Name="HeaderSubtitleText"
+                               Margin="0,4,0,0"
+                               TextWrapping="Wrap"
+                               Text="Vedat Güldü tarafından, Olcay Aşçı anısına profesyonel bakım platformu olarak geliştirilmiştir."
+                               AutomationProperties.Name="Başlık açıklaması" />
+                    <TextBlock x:Name="TributeBannerText"
+                               Margin="0,6,0,0"
+                               FontWeight="SemiBold"
+                               TextWrapping="Wrap"
+                               AutomationProperties.Name="İthaf satırı" />
+                </StackPanel>
+
+                <WrapPanel DockPanel.Dock="Right" VerticalAlignment="Top" ItemHeight="42" ItemWidth="190">
+                    <Button x:Name="ThemeLightButton"
+                            Content="_Aydınlık Tema"
+                            Margin="0,0,8,0"
+                            Padding="8"
+                            Click="ApplyLightTheme_Click" />
+                    <Button x:Name="ThemeDarkButton"
+                            Content="_Karanlık Tema"
+                            Margin="0,0,8,0"
+                            Padding="8"
+                            Click="ApplyDarkTheme_Click" />
+                    <Button x:Name="RunAsAdminButton"
+                            Content="_Yönetici Modu"
+                            Margin="0,0,8,0"
+                            Padding="8"
+                            Click="RunAsAdminButton_Click" />
+                    <Button x:Name="ToggleFullScreenButton"
+                            Content="_Tam Ekran (F11)"
+                            Padding="8"
+                            Click="ToggleFullScreenButton_Click" />
+                </WrapPanel>
+            </DockPanel>
+        </Border>
+
+        <Grid Grid.Row="1">
+            <Border x:Name="DashboardPanel" CornerRadius="12" Padding="12">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="3*" />
+                        <ColumnDefinition Width="2*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Border x:Name="DashboardHeroBorder" Grid.Row="0" Grid.ColumnSpan="2" CornerRadius="10" Padding="16" Margin="0,0,0,10">
+                        <StackPanel>
+                            <TextBlock Text="Temiz Ana Ekran" FontSize="30" FontWeight="Bold" />
+                            <TextBlock Margin="0,8,0,0" TextWrapping="Wrap"
+                                       Text="Ana ekran sade tutuldu. Tüm gelişmiş modüllere alttaki Alt kısayollu menüden ulaşabilirsiniz." />
+                            <WrapPanel Margin="0,12,0,0" ItemHeight="42" ItemWidth="240">
+                                <Button Content="_Önerilen Bakımı Başlat" Margin="0,0,8,8" Click="StartRecommendedFromDashboard_Click" />
+                                <Button Content="_Son Rapor Klasörünü Aç" Margin="0,0,8,8" Click="OpenReportsFolder_Click" />
+                                <Button Content="_Yüksek Kontrastı Etkinleştir" Margin="0,0,8,8" Click="ToggleHighContrastQuick_Click" />
+                                <Button Content="_Güncelleme Denetle" Margin="0,0,8,8" Click="CheckUpdatesNow_Click" />
+                            </WrapPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <Border x:Name="DashboardStatusBorder" Grid.Row="1" Grid.Column="0" CornerRadius="10" Padding="16" Margin="0,0,8,0">
+                        <StackPanel>
+                            <TextBlock Text="Canlı Durum Özeti" FontSize="24" FontWeight="Bold" />
+                            <TextBlock x:Name="DashboardThemeText" Margin="0,10,0,4" FontWeight="SemiBold" />
+                            <TextBlock x:Name="DashboardScheduleStateText" Margin="0,2,0,4" FontWeight="SemiBold" />
+                            <TextBlock x:Name="DashboardLastStatusText" Margin="0,2,0,4" FontWeight="SemiBold" TextWrapping="Wrap" />
+                            <TextBlock x:Name="DashboardUpdateStateText" Margin="0,2,0,4" FontWeight="SemiBold" TextWrapping="Wrap" />
+                            <TextBlock x:Name="DashboardLastReportText" Margin="0,2,0,8" TextWrapping="Wrap" />
+                            <TextBlock Text="Alt menü erişim ipucu: Alt tuşuna basınca harf kısayolları görünür." TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border x:Name="DashboardQuickActionsBorder" Grid.Row="1" Grid.Column="1" CornerRadius="10" Padding="16" Margin="8,0,0,0">
+                        <StackPanel>
+                            <TextBlock Text="Hızlı Geçişler" FontSize="24" FontWeight="Bold" />
+                            <WrapPanel Margin="0,10,0,0" ItemHeight="42" ItemWidth="220">
+                                <Button Content="_Temizlik Modülü" Tag="Clean" Margin="0,0,8,8" Click="NavigateButton_Click" />
+                                <Button Content="S_istem Modülü" Tag="System" Margin="0,0,8,8" Click="NavigateButton_Click" />
+                                <Button Content="_Raporlar Modülü" Tag="Reports" Margin="0,0,8,8" Click="NavigateButton_Click" />
+                                <Button Content="Erişile_bilirlik" Tag="Accessibility" Margin="0,0,8,8" Click="NavigateButton_Click" />
+                                <Button Content="İt_haf Modülü" Tag="Tribute" Margin="0,0,8,8" Click="NavigateButton_Click" />
+                                <Button Content="_V3 Özellikler" Tag="Pro" Margin="0,0,8,8" Click="NavigateButton_Click" />
+                            </WrapPanel>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <Border x:Name="CleanPanel" Visibility="Collapsed" CornerRadius="12" Padding="12">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="2*" />
+                        <ColumnDefinition Width="3*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Border x:Name="TasksBorder" Grid.Column="0" CornerRadius="10" Padding="14" Margin="0,0,8,0">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Text="Temizlik Görevleri" FontSize="24" FontWeight="Bold" />
+
+                            <ScrollViewer Grid.Row="1" Margin="0,10,0,10" VerticalScrollBarVisibility="Auto">
+                                <StackPanel>
+                                    <CheckBox x:Name="TaskUserTemp" Margin="0,5" IsChecked="True" Content="Kullanıcı geçici dosyalarını temizle" />
+                                    <CheckBox x:Name="TaskWindowsTemp" Margin="0,5" IsChecked="True" Content="Windows temp klasörünü temizle (yönetici gerekir)" />
+                                    <CheckBox x:Name="TaskRecycleBin" Margin="0,5" IsChecked="True" Content="Geri dönüşüm kutusunu boşalt" />
+                                    <CheckBox x:Name="TaskDns" Margin="0,5" IsChecked="True" Content="DNS önbelleğini sıfırla" />
+                                    <CheckBox x:Name="TaskNetworkRefresh" Margin="0,5" IsChecked="False" Content="Ağ bağdaştırıcılarını yenile" />
+                                    <CheckBox x:Name="TaskResetUpdate" Margin="0,5" IsChecked="False" Content="Windows Update bileşenlerini sıfırla" />
+                                    <CheckBox x:Name="TaskBrowserCache" Margin="0,5" IsChecked="False" Content="Tarayıcı önbelleklerini temizle" />
+                                </StackPanel>
+                            </ScrollViewer>
+
+                            <WrapPanel Grid.Row="2" ItemHeight="42" ItemWidth="210">
+                                <Button Content="_Önerilen Seçimler" Margin="0,0,8,0" Padding="8" Click="SelectRecommended_Click" />
+                                <Button Content="_Tümünü Seç" Margin="0,0,8,0" Padding="8" Click="SelectAll_Click" />
+                                <Button Content="T_ümünü Kaldır" Margin="0,0,8,0" Padding="8" Click="ClearAll_Click" />
+                            </WrapPanel>
+                        </Grid>
+                    </Border>
+
+                    <Border x:Name="LogBorder" Grid.Column="1" CornerRadius="10" Padding="14" Margin="8,0,0,0">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Text="Canlı İşlem Günlüğü" FontSize="24" FontWeight="Bold" />
+
+                            <TextBox x:Name="LogBox"
+                                     Grid.Row="1"
+                                     Margin="0,10,0,10"
+                                     IsReadOnly="True"
+                                     AcceptsReturn="True"
+                                     VerticalScrollBarVisibility="Auto"
+                                     TextWrapping="Wrap"
+                                     FontFamily="Consolas"
+                                     FontSize="16"
+                                     AutomationProperties.Name="Canlı günlük" />
+
+                            <WrapPanel Grid.Row="2" ItemHeight="44" ItemWidth="215">
+                                <Button x:Name="StartButton" Content="_Temizliği Başlat" Margin="0,0,8,0" Padding="8" Click="StartButton_Click" />
+                                <Button x:Name="CancelButton" Content="_Durdur" Margin="0,0,8,0" Padding="8" IsEnabled="False" Click="CancelButton_Click" />
+                                <Button x:Name="SaveLogButton" Content="_Logu Kaydet" Margin="0,0,8,0" Padding="8" Click="SaveLogButton_Click" />
+                                <Button x:Name="SaveJsonReportButton" Content="_JSON Raporu" Padding="8" Click="SaveJsonReportButton_Click" />
+                            </WrapPanel>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <Border x:Name="SystemPanel" Visibility="Collapsed" CornerRadius="12" Padding="12">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <Border x:Name="ToolsBorder" CornerRadius="10" Padding="14" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="Sistem Araçları" FontSize="24" FontWeight="Bold" />
+                                <WrapPanel Margin="0,10,0,0" ItemHeight="42" ItemWidth="240">
+                                    <Button Content="_Sistem Özeti" Margin="0,0,8,8" Padding="8" Click="CreateSystemSnapshot_Click" />
+                                    <Button Content="S_FC Doğrulama" Margin="0,0,8,8" Padding="8" Click="RunSfcVerify_Click" />
+                                    <Button Content="_DISM Sağlık Kontrolü" Margin="0,0,8,8" Padding="8" Click="RunDismCheckHealth_Click" />
+                                    <Button Content="_Kullanıcı Temp Aç" Margin="0,0,8,8" Padding="8" Click="OpenUserTempFolder_Click" />
+                                    <Button Content="_Rapor Klasörü Aç" Margin="0,0,8,8" Padding="8" Click="OpenReportsFolder_Click" />
+                                </WrapPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Border x:Name="SchedulerBorder" CornerRadius="10" Padding="14" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="Günlük Otomatik Çalıştırma" FontSize="24" FontWeight="Bold" />
+                                <WrapPanel Margin="0,10,0,0" ItemHeight="42">
+                                    <TextBlock Text="Saat:" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                    <ComboBox x:Name="ScheduleHourBox" Width="80" Margin="0,0,16,0" />
+                                    <TextBlock Text="Dakika:" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                    <ComboBox x:Name="ScheduleMinuteBox" Width="80" Margin="0,0,16,0" />
+                                    <Button Content="_Zamanlamayı Oluştur" Margin="0,0,8,0" Padding="8" Click="CreateSchedule_Click" />
+                                    <Button Content="Z_amanlamayı Sil" Padding="8" Click="DeleteSchedule_Click" />
+                                </WrapPanel>
+                                <TextBlock x:Name="ScheduleStatusText" Margin="0,8,0,0" FontWeight="SemiBold" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border x:Name="DiagnosticsBorder" CornerRadius="10" Padding="14">
+                            <StackPanel>
+                                <TextBlock Text="Ek Tanılama" FontSize="24" FontWeight="Bold" />
+                                <WrapPanel Margin="0,10,0,0" ItemHeight="42" ItemWidth="250">
+                                    <Button Content="_Ön Uçuş Kontrolü" Margin="0,0,8,8" Padding="8" Click="RunPreflightCheck_Click" />
+                                    <Button Content="Baş_langıç Raporu" Margin="0,0,8,8" Padding="8" Click="GenerateStartupReport_Click" />
+                                    <Button Content="_Servis Sağlığı" Margin="0,0,8,8" Padding="8" Click="AnalyzeCriticalServices_Click" />
+                                    <Button Content="_Olay Günlüğü Özeti" Margin="0,0,8,8" Padding="8" Click="GenerateEventLogSummary_Click" />
+                                </WrapPanel>
+                                <TextBox x:Name="PreflightOutputBox" Height="160" IsReadOnly="True" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" FontFamily="Consolas" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <Border x:Name="ReportsPanel" Visibility="Collapsed" CornerRadius="12" Padding="12">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <Border x:Name="ReportConfigBorder" CornerRadius="10" Padding="14" Margin="0,0,0,10">
+                        <StackPanel>
+                            <TextBlock Text="Rapor Ayarları" FontSize="24" FontWeight="Bold" />
+                            <TextBlock Margin="0,10,0,4" Text="Rapor Başlığı" />
+                            <TextBox x:Name="ReportTitleBox" Text="Temizlik ve Bakım Raporu v3" />
+                            <CheckBox x:Name="IncludeSystemSnapshotInReport" Margin="0,8,0,0" IsChecked="True" Content="Rapora sistem özetini ekle" />
+                            <WrapPanel Margin="0,10,0,0" ItemHeight="42" ItemWidth="220">
+                                <Button Content="_JSON Raporu Üret" Margin="0,0,8,0" Padding="8" Click="SaveJsonReportButton_Click" />
+                                <Button Content="_Acil Paket Oluştur" Padding="8" Click="CreateEmergencySupportPackage_Click" />
+                            </WrapPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <Border x:Name="ReportInfoBorder" Grid.Row="1" CornerRadius="10" Padding="14" Margin="0,0,0,10">
+                        <TextBlock x:Name="LastReportPathText" Text="Henüz rapor oluşturulmadı." TextWrapping="Wrap" />
+                    </Border>
+
+                    <Border x:Name="ReportPreviewBorder" Grid.Row="2" CornerRadius="10" Padding="14">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                                <TextBlock Text="Rapor Önizlemesi" FontSize="24" FontWeight="Bold" />
+                            <TextBox x:Name="ReportPreviewBox" Grid.Row="1" Margin="0,10,0,0" IsReadOnly="True" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" FontFamily="Consolas" />
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <Border x:Name="AccessibilityPanel" Visibility="Collapsed" CornerRadius="12" Padding="12">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <Border x:Name="AccessibilityBorder" CornerRadius="10" Padding="14" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="Erişilebilirlik ve WCAG AAA" FontSize="24" FontWeight="Bold" />
+                                <TextBlock Margin="0,10,0,4" Text="Yazı Boyutu" />
+                                <Slider x:Name="FontScaleSlider" Minimum="14" Maximum="34" Value="18" TickFrequency="1" IsSnapToTickEnabled="True" />
+                                <CheckBox x:Name="HighContrastModeCheck" Margin="0,10,0,0" Content="Yüksek kontrast modu" />
+                                <CheckBox x:Name="ScreenReaderAnnouncementsCheck" Margin="0,6,0,0" IsChecked="True" Content="Ekran okuyucu canlı anonslarını etkin tut" />
+                                <WrapPanel Margin="0,12,0,0" ItemHeight="42" ItemWidth="220">
+                                    <Button Content="_Ayarları Uygula" Margin="0,0,8,0" Padding="8" Click="ApplyAccessibility_Click" />
+                                    <Button Content="_Varsayılana Dön" Padding="8" Click="ResetAccessibility_Click" />
+                                </WrapPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Border x:Name="WcagBorder" CornerRadius="10" Padding="14">
+                            <StackPanel>
+                                <TextBlock Text="Kontrast Doğrulama" FontSize="24" FontWeight="Bold" />
+                                <TextBlock x:Name="ContrastInfoText" Margin="0,10,0,0" TextWrapping="Wrap" />
+                                <Button Margin="0,10,0,0" Width="260" Content="_WCAG AAA Kontrolünü Yenile" Click="RefreshContrastAudit_Click" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <Border x:Name="TributePanel" Visibility="Collapsed" CornerRadius="12" Padding="12">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <Border x:Name="TributeInfoBorder" CornerRadius="10" Padding="14" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="Olcay Aşçı Anısına" FontSize="24" FontWeight="Bold" />
+                                <TextBlock x:Name="ResearchSummaryText" Margin="0,10,0,0" TextWrapping="Wrap" />
+                                <TextBlock Margin="0,12,0,4" Text="Uzun İthaf Metni" FontWeight="SemiBold" />
+                                <TextBox x:Name="TributeLongNarrativeBox" Height="210" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
+                                <TextBlock Margin="0,12,0,4" Text="Kaynaklar" FontWeight="SemiBold" />
+                                <ListBox x:Name="SourceList" Height="150">
+                                    <ListBoxItem Content="https://tr.linkedin.com/in/olcay-a%C5%9F%C3%A7%C4%B1-b0a619124" />
+                                    <ListBoxItem Content="https://tr.linkedin.com/posts/olcay-a%C5%9F%C3%A7%C4%B1-b0a619124_eri%C5%9Filelilirlik-kavram%C4%B1n%C4%B1-ve-evrensel-tasar%C4%B1m%C4%B1-activity-6665135484022337536-UicK" />
+                                    <ListBoxItem Content="https://tr.linkedin.com/posts/olcay-a%C5%9F%C3%A7%C4%B1-b0a619124_nvda-20203ten-m%C3%BCjdeler-activity-6704406346390888448-1cmP" />
+                                    <ListBoxItem Content="https://eniyideneyim.com/" />
+                                </ListBox>
+                                <Button Margin="0,10,0,0" Width="230" Content="_Seçili Kaynağı Aç" Click="OpenSelectedSource_Click" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border x:Name="TributeEditBorder" CornerRadius="10" Padding="14">
+                            <StackPanel>
+                                <TextBlock Text="İthaf Metnini Özelleştir" FontSize="24" FontWeight="Bold" />
+                                <TextBlock Margin="0,10,0,4" Text="Kişi" />
+                                <TextBox x:Name="TributePersonBox" Text="Olcay Aşçı" />
+                                <TextBlock Margin="0,10,0,4" Text="Geçmişteki uygulama/girişim adı" />
+                                <TextBox x:Name="LegacyAppBox" Text="temizlik v2.cmd" />
+                                <TextBlock Margin="0,10,0,4" Text="İthaf metni" />
+                                <TextBox x:Name="TributeMessageBox" Height="130" AcceptsReturn="True" TextWrapping="Wrap" />
+                                <WrapPanel Margin="0,10,0,0" ItemHeight="42" ItemWidth="220">
+                                    <Button Content="_İthafı Uygula" Margin="0,0,8,0" Padding="8" Click="ApplyTributeButton_Click" />
+                                    <Button Content="_İthafı Kalıcı Kaydet" Padding="8" Click="SaveTributeButton_Click" />
+                                </WrapPanel>
+                                <TextBlock Margin="0,10,0,4" Text="Önizleme" FontWeight="SemiBold" />
+                                <TextBlock x:Name="TributePreviewText" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <Border x:Name="ProPanel" Visibility="Collapsed" CornerRadius="12" Padding="12">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <Border x:Name="HealthScoreBorder" CornerRadius="10" Padding="14" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="Akıllı Sistem Sağlık Skoru" FontSize="24" FontWeight="Bold" />
+                                <WrapPanel Margin="0,10,0,8" ItemHeight="42" ItemWidth="240">
+                                    <Button Content="_Sağlık Skoru Analizi" Margin="0,0,8,0" Padding="8" Click="AnalyzeHealthScore_Click" />
+                                    <Button Content="Ö_nerileri Uygula" Padding="8" Click="ApplyHealthRecommendations_Click" />
+                                </WrapPanel>
+                                <TextBlock x:Name="HealthScoreText" Text="Skor: Henüz hesaplanmadı" FontWeight="SemiBold" />
+                                <ListBox x:Name="HealthRecommendationsList" Margin="0,8,0,0" Height="120" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border x:Name="ScenarioBorder" CornerRadius="10" Padding="14" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="Senaryo Motoru" FontSize="24" FontWeight="Bold" />
+                                <WrapPanel Margin="0,10,0,0" ItemHeight="42">
+                                    <TextBlock Text="Profil:" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                    <ComboBox x:Name="ScenarioPresetBox" Width="300" />
+                                    <Button Content="_Profili Uygula" Margin="8,0,0,0" Padding="8" Click="ApplyScenarioPreset_Click" />
+                                </WrapPanel>
+                                <TextBlock x:Name="ScenarioInfoText" Margin="0,8,0,0" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border x:Name="LargeFileBorder" CornerRadius="10" Padding="14" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="Büyük Dosya Radar" FontSize="24" FontWeight="Bold" />
+                                <WrapPanel Margin="0,10,0,8" ItemHeight="42">
+                                    <TextBlock Text="Kök klasör:" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                    <TextBox x:Name="LargeFileScanPathBox" Width="430" />
+                                </WrapPanel>
+                                <WrapPanel Margin="0,0,0,8" ItemHeight="42">
+                                    <TextBlock Text="Minimum MB:" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                    <TextBox x:Name="LargeFileMinMbBox" Width="90" Text="100" />
+                                    <Button Content="_Taramayı Başlat" Margin="8,0,8,0" Padding="8" Click="ScanLargeFiles_Click" />
+                                    <Button Content="_CSV Dışa Aktar" Padding="8" Click="ExportLargeFilesCsv_Click" />
+                                </WrapPanel>
+                                <ListBox x:Name="LargeFilesList" Height="160" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border x:Name="BackupBorder" CornerRadius="10" Padding="14" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="Yedek ve Geri Dönüş Merkezi" FontSize="24" FontWeight="Bold" />
+                                <WrapPanel Margin="0,10,0,8" ItemHeight="42">
+                                    <TextBlock Text="Kaynak:" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                    <TextBox x:Name="BackupSourceBox" Width="430" />
+                                </WrapPanel>
+                                <WrapPanel Margin="0,0,0,8" ItemHeight="42">
+                                    <TextBlock Text="Hedef:" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                    <TextBox x:Name="BackupTargetBox" Width="430" />
+                                </WrapPanel>
+                                <WrapPanel ItemHeight="42" ItemWidth="250">
+                                    <Button Content="_Zip Yedek Oluştur" Margin="0,0,8,0" Padding="8" Click="CreateZipBackup_Click" />
+                                    <Button Content="_Geri Yükleme Noktası" Padding="8" Click="CreateRestorePoint_Click" />
+                                </WrapPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Border x:Name="AnalyticsBorder" CornerRadius="10" Padding="14" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="Geçmiş Analitik ve Trend" FontSize="24" FontWeight="Bold" />
+                                <WrapPanel Margin="0,10,0,8" ItemHeight="42" ItemWidth="270">
+                                    <Button Content="_Geçmişi Analiz Et" Margin="0,0,8,0" Padding="8" Click="AnalyzeReportHistory_Click" />
+                                    <Button Content="_Trend Önerileri Yaz" Padding="8" Click="WriteTrendRecommendations_Click" />
+                                </WrapPanel>
+                                <TextBox x:Name="AnalyticsOutputBox" Height="160" IsReadOnly="True" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" FontFamily="Consolas" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border x:Name="NetworkDiagBorder" CornerRadius="10" Padding="14" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="Ağ Tanılama" FontSize="24" FontWeight="Bold" />
+                                <WrapPanel Margin="0,10,0,8" ItemHeight="42">
+                                    <TextBlock Text="Host:" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                    <TextBox x:Name="NetworkTestHostBox" Width="220" Text="1.1.1.1" />
+                                    <Button Content="_Ağ Testi Çalıştır" Margin="8,0,8,0" Padding="8" Click="RunNetworkDiagnostics_Click" />
+                                    <Button Content="_Tarayıcı Önbellek Temizle" Padding="8" Click="CleanBrowserCaches_Click" />
+                                </WrapPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Border x:Name="FolderSizeBorder" CornerRadius="10" Padding="14" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="Klasör Boyut Analizi" FontSize="24" FontWeight="Bold" />
+                                <WrapPanel Margin="0,10,0,8" ItemHeight="42">
+                                    <TextBlock Text="Kök klasör:" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                    <TextBox x:Name="FolderSizeRootBox" Width="430" />
+                                    <Button Content="_Analiz Et" Margin="8,0,0,0" Padding="8" Click="AnalyzeFolderSizes_Click" />
+                                </WrapPanel>
+                                <ListBox x:Name="FolderSizeList" Height="150" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border x:Name="ProfileBorder" CornerRadius="10" Padding="14" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="Bakım Profili Aktar / Yükle" FontSize="24" FontWeight="Bold" />
+                                <WrapPanel Margin="0,10,0,0" ItemHeight="42" ItemWidth="240">
+                                    <Button Content="_Profili Dışa Aktar" Margin="0,0,8,0" Padding="8" Click="ExportMaintenanceProfile_Click" />
+                                    <Button Content="P_rofili İçe Aktar" Padding="8" Click="ImportMaintenanceProfile_Click" />
+                                </WrapPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Border x:Name="NineFeaturesBorder" CornerRadius="10" Padding="14">
+                            <StackPanel>
+                                <TextBlock Text="V3 Ekstra 9 Özellik Merkezi" FontSize="24" FontWeight="Bold" />
+                                <WrapPanel Margin="0,10,0,8" ItemHeight="42" ItemWidth="320">
+                                    <Button Content="_Başlangıç Uygulamaları Raporu" Margin="0,0,8,8" Click="GenerateStartupAppsReport_Click" />
+                                    <Button Content="_RAM ve Süreç Anlık Görünümü" Margin="0,0,8,8" Click="CaptureRamProcessSnapshot_Click" />
+                                    <Button Content="_Disk Sağlık Özeti" Margin="0,0,8,8" Click="GenerateDiskHealthSummary_Click" />
+                                    <Button Content="_Temp Boyut Analizi" Margin="0,0,8,8" Click="AnalyzeTempFootprint_Click" />
+                                    <Button Content="_DNS Çoklu Gecikme Testi" Margin="0,0,8,8" Click="RunMultiDnsLatencyTest_Click" />
+                                    <Button Content="_Hosts Dosyasını Yedekle" Margin="0,0,8,8" Click="BackupHostsFile_Click" />
+                                    <Button Content="_Son 24 Saat Hata Özeti" Margin="0,0,8,8" Click="GenerateLast24hErrorSummary_Click" />
+                                    <Button Content="_Başlangıç Etki Analizi" Margin="0,0,8,8" Click="AnalyzeStartupImpact_Click" />
+                                    <Button Content="_Bakım Özetini Panoya Kopyala" Margin="0,0,8,8" Click="CopyMaintenanceDigest_Click" />
+                                </WrapPanel>
+                                <TextBox x:Name="FeatureHubOutputBox"
+                                         Height="220"
+                                         IsReadOnly="True"
+                                         AcceptsReturn="True"
+                                         VerticalScrollBarVisibility="Auto"
+                                         TextWrapping="Wrap"
+                                         FontFamily="Consolas"
+                                         AutomationProperties.Name="Ek özellik çıktı alanı" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+
+        <Border x:Name="BottomNavBorder" Grid.Row="2" CornerRadius="12" Padding="8" Margin="0,10,0,8">
+            <UniformGrid Columns="7">
+                <Button x:Name="NavDashboardButton" Tag="Dashboard" Margin="4" Padding="8" Click="NavigateButton_Click">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE80F;" Margin="0,0,8,0" />
+                        <AccessText Text="_Ana Sayfa" />
+                    </StackPanel>
+                </Button>
+                <Button x:Name="NavCleanButton" Tag="Clean" Margin="4" Padding="8" Click="NavigateButton_Click">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE74D;" Margin="0,0,8,0" />
+                        <AccessText Text="_Temizlik" />
+                    </StackPanel>
+                </Button>
+                <Button x:Name="NavSystemButton" Tag="System" Margin="4" Padding="8" Click="NavigateButton_Click">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE713;" Margin="0,0,8,0" />
+                        <AccessText Text="S_istem" />
+                    </StackPanel>
+                </Button>
+                <Button x:Name="NavReportsButton" Tag="Reports" Margin="4" Padding="8" Click="NavigateButton_Click">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE9D2;" Margin="0,0,8,0" />
+                        <AccessText Text="_Raporlar" />
+                    </StackPanel>
+                </Button>
+                <Button x:Name="NavAccessibilityButton" Tag="Accessibility" Margin="4" Padding="8" Click="NavigateButton_Click">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE7EF;" Margin="0,0,8,0" />
+                        <AccessText Text="Erişile_bilirlik" />
+                    </StackPanel>
+                </Button>
+                <Button x:Name="NavTributeButton" Tag="Tribute" Margin="4" Padding="8" Click="NavigateButton_Click">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xEB52;" Margin="0,0,8,0" />
+                        <AccessText Text="İt_haf" />
+                    </StackPanel>
+                </Button>
+                <Button x:Name="NavProButton" Tag="Pro" Margin="4" Padding="8" Click="NavigateButton_Click">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE81E;" Margin="0,0,8,0" />
+                        <AccessText Text="_V3 Özellikler" />
+                    </StackPanel>
+                </Button>
+            </UniformGrid>
+        </Border>
+
+        <Border x:Name="StatusBorder" Grid.Row="3" CornerRadius="12" Padding="10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="280" />
+                </Grid.ColumnDefinitions>
+
+                <TextBlock x:Name="StatusText"
+                           VerticalAlignment="Center"
+                           FontWeight="SemiBold"
+                           Text="Hazır"
+                           AutomationProperties.LiveSetting="Assertive" />
+
+                <ProgressBar x:Name="ProgressBar"
+                             Grid.Column="1"
+                             Height="24"
+                             Minimum="0"
+                             Maximum="100"
+                             Value="0" />
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

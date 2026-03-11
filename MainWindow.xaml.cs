@@ -49,6 +49,7 @@ namespace TemizlikMasaUygulamasi
 
         private ThemeMode _themeMode = ThemeMode.Light;
         private string _currentPanelKey = "Dashboard";
+        private int _statusSequence;
         private bool _isUpdateCheckInProgress;
         private string _lastUpdateSummary = "Güncelleme durumu henüz denetlenmedi.";
         private TributeConfig _tributeConfig = new();
@@ -124,6 +125,22 @@ namespace TemizlikMasaUygulamasi
             }
 
             ShowPanel(panelKey);
+        }
+
+        private void MenuNavigate_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not MenuItem menuItem || menuItem.Tag is not string panelKey)
+            {
+                return;
+            }
+
+            ShowPanel(panelKey);
+            SetStatus($"Menü açıldı: {GetPanelDisplayName(panelKey)}");
+        }
+
+        private void MenuExit_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
         }
 
         private void ShowPanel(string panelKey)
@@ -306,16 +323,26 @@ namespace TemizlikMasaUygulamasi
 
             RootGrid.Background = new SolidColorBrush(appBg);
             HeaderBorder.Background = new SolidColorBrush(panelBg);
+            ClassicMenuBorder.Background = new SolidColorBrush(panelBg);
             BottomNavBorder.Background = new SolidColorBrush(panelBg);
             StatusBorder.Background = new SolidColorBrush(panelBg);
 
             SetPanelBackground(cardBg);
             SetTextColor(text);
             UpdateActiveNavigation();
+            UpdateThemeButtons();
 
             RefreshContrastAudit();
             SetStatus(mode == ThemeMode.Light ? "Aydınlık tema uygulandı." : "Karanlık tema uygulandı.");
             UpdateDashboardSummary();
+        }
+
+        private void UpdateThemeButtons()
+        {
+            var lightActive = _themeMode == ThemeMode.Light;
+            ThemeLightButton.Content = lightActive ? "_Aydınlık Tema (Etkin)" : "_Aydınlık Tema";
+            ThemeDarkButton.Content = lightActive ? "_Karanlık Tema" : "_Karanlık Tema (Etkin)";
+            ThemeStateText.Text = $"Tema: {GetThemeDisplayName()}";
         }
 
         private void SetThemeBrush(string key, Color color)
@@ -355,6 +382,7 @@ namespace TemizlikMasaUygulamasi
             DashboardHeroBorder.Background = brush;
             DashboardStatusBorder.Background = brush;
             DashboardQuickActionsBorder.Background = brush;
+            MainMenu.Background = brush;
 
             LogBox.Background = brush;
             ReportPreviewBox.Background = brush;
@@ -374,6 +402,7 @@ namespace TemizlikMasaUygulamasi
             AnalyticsOutputBox.Foreground = brush;
             TributeLongNarrativeBox.Foreground = brush;
             FeatureHubOutputBox.Foreground = brush;
+            MainMenu.Foreground = brush;
         }
 
         private void RunAsAdminButton_Click(object sender, RoutedEventArgs e)
@@ -2064,7 +2093,7 @@ namespace TemizlikMasaUygulamasi
         private string GetApplicationVersion()
         {
             var version = Assembly.GetExecutingAssembly().GetName().Version;
-            return version == null ? "3.1.0" : $"{version.Major}.{version.Minor}.{version.Build}";
+            return version == null ? "3.1.1" : $"{version.Major}.{version.Minor}.{version.Build}";
         }
 
         private void SetFeatureHubOutput(string title, IEnumerable<string> lines)
@@ -2233,7 +2262,7 @@ namespace TemizlikMasaUygulamasi
                 var versionText = GetApplicationVersion();
                 if (!Version.TryParse(versionText, out var currentVersion))
                 {
-                    currentVersion = new Version(3, 1, 0);
+                    currentVersion = new Version(3, 1, 1);
                 }
 
                 var result = await GitHubUpdateService.CheckLatestReleaseAsync(
@@ -2317,9 +2346,27 @@ namespace TemizlikMasaUygulamasi
 
         private void SetStatus(string message)
         {
+            _statusSequence++;
             StatusText.Text = message;
+            ActionFeedbackText.Text = $"[{DateTime.Now:HH:mm:ss}] {message} (#{_statusSequence})";
             RaiseLiveRegionChanged(StatusText);
+            RaiseLiveRegionChanged(ActionFeedbackText);
             UpdateDashboardSummary();
+        }
+
+        private static string GetPanelDisplayName(string key)
+        {
+            return key switch
+            {
+                "Dashboard" => "Ana Sayfa",
+                "Clean" => "Temizlik",
+                "System" => "Sistem",
+                "Reports" => "Raporlar",
+                "Accessibility" => "Erişilebilirlik",
+                "Tribute" => "İthaf",
+                "Pro" => "V3 Özellikler",
+                _ => "Ana Sayfa",
+            };
         }
 
         private void RaiseLiveRegionChanged(FrameworkElement element)

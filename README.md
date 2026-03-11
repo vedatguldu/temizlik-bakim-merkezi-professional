@@ -1,4 +1,4 @@
-# Temizlik ve Bakım Merkezi Professional v3.1
+# Temizlik ve Bakım Merkezi Professional v3.1.1
 
 Bu proje, `temizlik v2.cmd` mirasını modern, erişilebilir ve tam özellikli bir Windows masaüstü uygulamasına dönüştürür.
 
@@ -45,8 +45,8 @@ Bu proje, `temizlik v2.cmd` mirasını modern, erişilebilir ve tam özellikli b
 ## Geliştirici Çalıştırma
 
 ```powershell
-dotnet build "c:\Users\vedat\OneDrive\Masaüstü\TemizlikMasaUygulamasi\TemizlikMasaUygulamasi.csproj"
-dotnet run --project "c:\Users\vedat\OneDrive\Masaüstü\TemizlikMasaUygulamasi\TemizlikMasaUygulamasi.csproj"
+dotnet build ./TemizlikMasaUygulamasi.csproj
+dotnet run --project ./TemizlikMasaUygulamasi.csproj
 ```
 
 ## Bağımsız Dağıtım (Kurulum Dosyası)
@@ -54,7 +54,7 @@ dotnet run --project "c:\Users\vedat\OneDrive\Masaüstü\TemizlikMasaUygulamasi\
 Proje, kullanıcı tarafında ek kurulum gerektirmeyecek şekilde self-contained yayın ve setup üretir.
 
 ```powershell
-cd "c:\Users\vedat\OneDrive\Masaüstü\TemizlikMasaUygulamasi"
+cd ./TemizlikMasaUygulamasi
 .\build-setup.cmd
 ```
 

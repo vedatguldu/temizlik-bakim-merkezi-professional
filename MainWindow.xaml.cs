@@ -5,6 +5,7 @@ using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Net.Http;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
@@ -28,6 +29,7 @@ namespace TemizlikMasaUygulamasi
         private const uint RecycleFlagNoSound = 0x00000004;
         private const string UpdateRepoOwner = "vedatguldu";
         private const string UpdateRepoName = "temizlik-bakim-merkezi-professional";
+        private static readonly HttpClient UpdateDownloadClient = CreateUpdateDownloadClient();
 
         private readonly string _scheduleTaskName = "TemizlikMasaUygulamasiV3Daily";
         private readonly string _dataDirectory;
@@ -51,6 +53,7 @@ namespace TemizlikMasaUygulamasi
         private string _currentPanelKey = "Dashboard";
         private int _statusSequence;
         private bool _isUpdateCheckInProgress;
+        private bool _openMenuOnAltKeyUp;
         private string _lastUpdateSummary = "Güncelleme durumu henüz denetlenmedi.";
         private TributeConfig _tributeConfig = new();
 
@@ -92,7 +95,7 @@ namespace TemizlikMasaUygulamasi
             ShowPanel("Dashboard");
 
             SetStatus("Hazır");
-            AppendLog("Temizlik ve Bakım Merkezi Professional v3.1 başlatıldı.");
+            AppendLog("Temizlik ve Bakım Merkezi Professional v3.1.2 başlatıldı.");
             AppendLog($"Yönetici yetkisi: {(IsAdministrator() ? "Var" : "Yok")}");
             FeatureHubOutputBox.Text = "Professional 9 Özellik Merkezi hazır. İstediğiniz analizi başlatmak için bir düğmeye basın.";
 
@@ -115,6 +118,63 @@ namespace TemizlikMasaUygulamasi
                 ToggleFullScreen();
                 e.Handled = true;
             }
+        }
+
+        private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            var isAltOnlyPress =
+                e.Key == Key.LeftAlt ||
+                e.Key == Key.RightAlt ||
+                (e.Key == Key.System && (e.SystemKey == Key.LeftAlt || e.SystemKey == Key.RightAlt));
+
+            if (isAltOnlyPress)
+            {
+                _openMenuOnAltKeyUp = true;
+                return;
+            }
+
+            if (e.Key == Key.System)
+            {
+                _openMenuOnAltKeyUp = false;
+            }
+        }
+
+        private void Window_PreviewKeyUp(object sender, KeyEventArgs e)
+        {
+            if (!_openMenuOnAltKeyUp)
+            {
+                return;
+            }
+
+            if (e.Key != Key.LeftAlt && e.Key != Key.RightAlt)
+            {
+                return;
+            }
+
+            _openMenuOnAltKeyUp = false;
+            if (Keyboard.Modifiers != ModifierKeys.None)
+            {
+                return;
+            }
+
+            if (TryOpenClassicMenu())
+            {
+                e.Handled = true;
+            }
+        }
+
+        private bool TryOpenClassicMenu()
+        {
+            if (MainMenu.Items.Count == 0 || MainMenu.Items[0] is not MenuItem firstItem)
+            {
+                return false;
+            }
+
+            MainMenu.Focus();
+            firstItem.Focus();
+            firstItem.IsSubmenuOpen = true;
+            SetStatus("Üst menü açıldı. Yön tuşları ile gezinebilirsiniz.");
+            return true;
         }
 
         private void NavigateButton_Click(object sender, RoutedEventArgs e)
@@ -2296,12 +2356,25 @@ namespace TemizlikMasaUygulamasi
                     $"Yeni sürüm: {result.LatestVersion}\r\n" +
                     $"Başlık: {result.ReleaseTitle}\r\n\r\n" +
                     $"Özet: {notesPreview}\r\n\r\n" +
-                    "İndirme sayfası açılsın mı?";
+                    "Güncellemeyi şimdi otomatik indirip yüklemek ister misiniz?";
 
                 var answer = MessageBox.Show(this, message, "Güncelleme Mevcut", MessageBoxButton.YesNo, MessageBoxImage.Question);
                 if (answer == MessageBoxResult.Yes)
                 {
-                    OpenUrl(result.DownloadUrl);
+                    var started = await TryStartAutomaticUpdateAsync(result);
+                    if (!started)
+                    {
+                        var fallback = MessageBox.Show(
+                            this,
+                            "Otomatik güncelleme başlatılamadı. İndirme sayfası açılsın mı?",
+                            "Otomatik Güncelleme",
+                            MessageBoxButton.YesNo,
+                            MessageBoxImage.Information);
+                        if (fallback == MessageBoxResult.Yes)
+                        {
+                            OpenUrl(result.DownloadUrl);
+                        }
+                    }
                 }
             }
             catch (Exception ex)
@@ -2318,6 +2391,101 @@ namespace TemizlikMasaUygulamasi
                 _isUpdateCheckInProgress = false;
                 UpdateDashboardSummary();
             }
+        }
+
+        private async Task<bool> TryStartAutomaticUpdateAsync(UpdateCheckResult result)
+        {
+            if (string.IsNullOrWhiteSpace(result.DownloadUrl) ||
+                !Uri.TryCreate(result.DownloadUrl, UriKind.Absolute, out var downloadUri) ||
+                !downloadUri.AbsolutePath.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+            {
+                AppendLog("Otomatik güncelleme için doğrudan kurulum dosyası bulunamadı.");
+                return false;
+            }
+
+            try
+            {
+                SetStatus("Güncelleme paketi indiriliyor...");
+
+                var updateTempDirectory = Path.Combine(Path.GetTempPath(), "TemizlikBakimMerkeziProfessional", "Updater");
+                Directory.CreateDirectory(updateTempDirectory);
+
+                var setupFileName = $"TemizlikBakimMerkezi-Professional-v{result.LatestVersion.ToString().Replace('.', '_')}-Setup.exe";
+                var setupPath = Path.Combine(updateTempDirectory, setupFileName);
+
+                using (var response = await UpdateDownloadClient.GetAsync(downloadUri, HttpCompletionOption.ResponseHeadersRead, CancellationToken.None))
+                {
+                    response.EnsureSuccessStatusCode();
+                    await using var sourceStream = await response.Content.ReadAsStreamAsync(CancellationToken.None);
+                    await using var targetStream = new FileStream(setupPath, FileMode.Create, FileAccess.Write, FileShare.None);
+                    await sourceStream.CopyToAsync(targetStream);
+                }
+
+                AppendLog($"Güncelleme paketi indirildi: {setupPath}");
+                SetStatus("Kurulum başlatılıyor...");
+
+                var currentExePath = Environment.ProcessPath;
+                if (string.IsNullOrWhiteSpace(currentExePath))
+                {
+                    currentExePath = Process.GetCurrentProcess().MainModule?.FileName ?? string.Empty;
+                }
+
+                if (string.IsNullOrWhiteSpace(currentExePath))
+                {
+                    throw new InvalidOperationException("Çalışan uygulama yolu belirlenemedi.");
+                }
+
+                var updaterScriptPath = Path.Combine(updateTempDirectory, $"run-update-{Guid.NewGuid():N}.cmd");
+                var scriptLines = new[]
+                {
+                    "@echo off",
+                    "setlocal",
+                    $"set \"SETUP={setupPath}\"",
+                    $"set \"APP={currentExePath}\"",
+                    "timeout /t 2 /nobreak >nul",
+                    "start \"\" /wait \"%SETUP%\" /SP- /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /FORCECLOSEAPPLICATIONS",
+                    "if %errorlevel% neq 0 goto end",
+                    "if exist \"%APP%\" start \"\" \"%APP%\"",
+                    ":end",
+                    "del \"%SETUP%\" >nul 2>&1",
+                    "del \"%~f0\" >nul 2>&1",
+                };
+
+                File.WriteAllLines(updaterScriptPath, scriptLines, new UTF8Encoding(false));
+
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "cmd.exe",
+                    Arguments = $"/c \"\"{updaterScriptPath}\"\"",
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    WorkingDirectory = updateTempDirectory,
+                });
+
+                MessageBox.Show(
+                    this,
+                    "Güncelleme indirildi. Kurulum başlatıldı ve uygulama kapanacak. Kurulum tamamlandığında uygulama otomatik yeniden açılır.",
+                    "Otomatik Güncelleme",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+
+                AppendLog("Otomatik güncelleme başlatıldı.");
+                Application.Current.Shutdown();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                AppendLog($"Otomatik güncelleme başlatılamadı: {ex.Message}");
+                SetStatus("Otomatik güncelleme başlatılamadı.");
+                return false;
+            }
+        }
+
+        private static HttpClient CreateUpdateDownloadClient()
+        {
+            var client = new HttpClient();
+            client.DefaultRequestHeaders.Add("User-Agent", "TemizlikBakimMerkeziProfessional-Updater/3.1.2");
+            return client;
         }
 
         private void UpdateDashboardSummary()

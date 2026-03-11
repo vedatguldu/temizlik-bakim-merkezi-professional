@@ -4,16 +4,18 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="Temizlik ve Bakım Merkezi Professional v3.1"
+        Title="Temizlik ve Bakım Merkezi Professional"
         Height="900"
         Width="1450"
         MinHeight="760"
         MinWidth="1180"
         Loaded="Window_Loaded"
+        PreviewKeyDown="Window_PreviewKeyDown"
+        PreviewKeyUp="Window_PreviewKeyUp"
         KeyDown="Window_KeyDown"
         FontSize="18"
         FontFamily="Segoe UI"
-        AutomationProperties.Name="Temizlik ve Bakım Merkezi Professional v3.1 penceresi"
+        AutomationProperties.Name="Temizlik ve Bakım Merkezi Professional penceresi"
         AutomationProperties.HelpText="Alt menü tabanlı, erişilebilir ve gelişmiş bakım uygulaması.">
     <Window.Resources>
         <SolidColorBrush x:Key="AppBackgroundBrush" Color="#F6F8FC" />
@@ -88,7 +90,7 @@
                     <TextBlock x:Name="HeaderVersionText"
                                Margin="0,2,0,0"
                                FontWeight="SemiBold"
-                               Text="Sürüm 3.1.1" />
+                               Text="Sürüm" />
                     <TextBlock x:Name="ThemeStateText"
                                Margin="0,2,0,0"
                                FontWeight="SemiBold"

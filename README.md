@@ -1,4 +1,4 @@
-# Temizlik ve Bakım Merkezi Professional v3.1.1
+# Temizlik ve Bakım Merkezi Professional v3.1.2
 
 Bu proje, `temizlik v2.cmd` mirasını modern, erişilebilir ve tam özellikli bir Windows masaüstü uygulamasına dönüştürür.
 
@@ -61,7 +61,7 @@ cd ./TemizlikMasaUygulamasi
 Üretilen dosyalar:
 
 - Self-contained yayın: `publish/win-x64/TemizlikMasaUygulamasi.exe`
-- Kurulum dosyası: `artifacts/setup/TemizlikBakimMerkezi-Professional-v3_1_1-Setup.exe`
+- Kurulum dosyası: `artifacts/setup/TemizlikBakimMerkezi-Professional-v3_1_2-Setup.exe`
 
 ## GitHub Üzerinden Güncelleme
 

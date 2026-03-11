@@ -132,7 +132,11 @@
         </Border>
 
         <Border x:Name="ClassicMenuBorder" Grid.Row="1" CornerRadius="10" Padding="4" Margin="0,0,0,10">
-            <Menu x:Name="MainMenu" Background="Transparent">
+            <Menu x:Name="MainMenu"
+                  Background="Transparent"
+                  IsTabStop="False"
+                  KeyboardNavigation.TabNavigation="None"
+                  KeyboardNavigation.ControlTabNavigation="None">
                 <MenuItem Header="_Uygulama">
                     <MenuItem Header="_Ana Sayfa" Tag="Dashboard" Click="MenuNavigate_Click" />
                     <MenuItem Header="_Güncelleme Denetle" Click="CheckUpdatesNow_Click" />

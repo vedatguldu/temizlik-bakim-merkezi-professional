@@ -14,6 +14,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Automation.Peers;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -83,11 +84,16 @@ namespace TemizlikMasaUygulamasi
             PopulateScheduleSelectors();
             LoadTributeConfig();
             ApplyTributeToUi();
+            RefreshAutomaticAccessibilityNames();
 
             LargeFileScanPathBox.Text = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             FolderSizeRootBox.Text = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             BackupSourceBox.Text = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
             BackupTargetBox.Text = Path.Combine(_dataDirectory, "Yedekler");
+            if (SourceList.Items.Count > 0 && SourceList.SelectedIndex < 0)
+            {
+                SourceList.SelectedIndex = 0;
+            }
 
             SelectRecommended();
             ApplyTheme(ThemeMode.Light);
@@ -95,7 +101,7 @@ namespace TemizlikMasaUygulamasi
             ShowPanel("Dashboard");
 
             SetStatus("Hazır");
-            AppendLog("Temizlik ve Bakım Merkezi Professional v3.1.2 başlatıldı.");
+            AppendLog($"Temizlik ve Bakım Merkezi Professional v{appVersion} başlatıldı.");
             AppendLog($"Yönetici yetkisi: {(IsAdministrator() ? "Var" : "Yok")}");
             FeatureHubOutputBox.Text = "Professional 9 Özellik Merkezi hazır. İstediğiniz analizi başlatmak için bir düğmeye basın.";
 
@@ -361,6 +367,7 @@ namespace TemizlikMasaUygulamasi
 
         private void ApplyTheme(ThemeMode mode)
         {
+            var wasAlreadyActive = _themeMode == mode;
             _themeMode = mode;
 
             var appBg = mode == ThemeMode.Light ? ColorFromHex("#F4F7FC") : ColorFromHex("#0B0F14");
@@ -393,7 +400,14 @@ namespace TemizlikMasaUygulamasi
             UpdateThemeButtons();
 
             RefreshContrastAudit();
-            SetStatus(mode == ThemeMode.Light ? "Aydınlık tema uygulandı." : "Karanlık tema uygulandı.");
+            if (wasAlreadyActive)
+            {
+                SetStatus(mode == ThemeMode.Light ? "Aydınlık tema zaten etkin." : "Karanlık tema zaten etkin.");
+            }
+            else
+            {
+                SetStatus(mode == ThemeMode.Light ? "Aydınlık tema uygulandı." : "Karanlık tema uygulandı.");
+            }
             UpdateDashboardSummary();
         }
 
@@ -402,7 +416,10 @@ namespace TemizlikMasaUygulamasi
             var lightActive = _themeMode == ThemeMode.Light;
             ThemeLightButton.Content = lightActive ? "_Aydınlık Tema (Etkin)" : "_Aydınlık Tema";
             ThemeDarkButton.Content = lightActive ? "_Karanlık Tema" : "_Karanlık Tema (Etkin)";
+            ThemeLightButton.ToolTip = lightActive ? "Aydınlık tema şu anda etkin." : "Aydınlık temaya geç.";
+            ThemeDarkButton.ToolTip = lightActive ? "Karanlık temaya geç." : "Karanlık tema şu anda etkin.";
             ThemeStateText.Text = $"Tema: {GetThemeDisplayName()}";
+            RefreshAutomaticAccessibilityNames();
         }
 
         private void SetThemeBrush(string key, Color color)
@@ -1284,7 +1301,7 @@ namespace TemizlikMasaUygulamasi
 
         private void OpenSelectedSource_Click(object sender, RoutedEventArgs e)
         {
-            if (SourceList.SelectedItem is not ListBoxItem item || item.Content is not string url)
+            if (!TryGetSelectedSourceUrl(out var url))
             {
                 SetStatus("Önce bir kaynak seçin.");
                 return;
@@ -1292,6 +1309,29 @@ namespace TemizlikMasaUygulamasi
 
             OpenUrl(url);
             AppendLog($"Kaynak açıldı: {url}");
+        }
+
+        private bool TryGetSelectedSourceUrl(out string url)
+        {
+            url = string.Empty;
+
+            if (SourceList.SelectedItem is ListBoxItem selectedItem && selectedItem.Content is string selectedUrl && !string.IsNullOrWhiteSpace(selectedUrl))
+            {
+                url = selectedUrl;
+                return true;
+            }
+
+            foreach (var item in SourceList.Items)
+            {
+                if (item is ListBoxItem listItem && listItem.Content is string candidate && !string.IsNullOrWhiteSpace(candidate))
+                {
+                    SourceList.SelectedItem = listItem;
+                    url = candidate;
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private void LoadTributeConfig()
@@ -2153,7 +2193,7 @@ namespace TemizlikMasaUygulamasi
         private string GetApplicationVersion()
         {
             var version = Assembly.GetExecutingAssembly().GetName().Version;
-            return version == null ? "3.1.2" : $"{version.Major}.{version.Minor}.{version.Build}";
+            return version == null ? "3.1.3" : $"{version.Major}.{version.Minor}.{version.Build}";
         }
 
         private void SetFeatureHubOutput(string title, IEnumerable<string> lines)
@@ -2322,7 +2362,7 @@ namespace TemizlikMasaUygulamasi
                 var versionText = GetApplicationVersion();
                 if (!Version.TryParse(versionText, out var currentVersion))
                 {
-                    currentVersion = new Version(3, 1, 2);
+                    currentVersion = new Version(3, 1, 3);
                 }
 
                 var result = await GitHubUpdateService.CheckLatestReleaseAsync(
@@ -2484,7 +2524,7 @@ namespace TemizlikMasaUygulamasi
         private static HttpClient CreateUpdateDownloadClient()
         {
             var client = new HttpClient();
-            client.DefaultRequestHeaders.Add("User-Agent", "TemizlikBakimMerkeziProfessional-Updater/3.1.2");
+            client.DefaultRequestHeaders.Add("User-Agent", "TemizlikBakimMerkeziProfessional-Updater/3.1.3");
             return client;
         }
 
@@ -2516,10 +2556,87 @@ namespace TemizlikMasaUygulamasi
         {
             _statusSequence++;
             StatusText.Text = message;
-            ActionFeedbackText.Text = $"[{DateTime.Now:HH:mm:ss}] {message} (#{_statusSequence})";
+            ActionFeedbackText.Text = message;
             RaiseLiveRegionChanged(StatusText);
             RaiseLiveRegionChanged(ActionFeedbackText);
             UpdateDashboardSummary();
+        }
+
+        private void RefreshAutomaticAccessibilityNames()
+        {
+            ApplyAccessibilityNamesRecursive(this);
+            foreach (var item in MainMenu.Items)
+            {
+                if (item is MenuItem menuItem)
+                {
+                    ApplyMenuItemAccessibilityNames(menuItem);
+                }
+            }
+        }
+
+        private void ApplyAccessibilityNamesRecursive(DependencyObject root)
+        {
+            foreach (var childObject in LogicalTreeHelper.GetChildren(root))
+            {
+                if (childObject is not DependencyObject child)
+                {
+                    continue;
+                }
+
+                switch (child)
+                {
+                    case Button button:
+                        EnsureAccessibleName(button, button.Content);
+                        break;
+                    case CheckBox checkBox:
+                        EnsureAccessibleName(checkBox, checkBox.Content);
+                        break;
+                    case GroupBox groupBox:
+                        EnsureAccessibleName(groupBox, groupBox.Header);
+                        break;
+                }
+
+                ApplyAccessibilityNamesRecursive(child);
+            }
+        }
+
+        private void ApplyMenuItemAccessibilityNames(MenuItem item)
+        {
+            EnsureAccessibleName(item, item.Header);
+            foreach (var child in item.Items)
+            {
+                if (child is MenuItem subItem)
+                {
+                    ApplyMenuItemAccessibilityNames(subItem);
+                }
+            }
+        }
+
+        private static void EnsureAccessibleName(DependencyObject element, object? content)
+        {
+            if (!string.IsNullOrWhiteSpace(AutomationProperties.GetName(element)))
+            {
+                return;
+            }
+
+            var label = NormalizeAccessibleLabel(content);
+            if (!string.IsNullOrWhiteSpace(label))
+            {
+                AutomationProperties.SetName(element, label);
+            }
+        }
+
+        private static string NormalizeAccessibleLabel(object? content)
+        {
+            var text = content?.ToString() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                return string.Empty;
+            }
+
+            text = text.Replace("__", "_").Replace("_", string.Empty);
+            var pieces = text.Split(new[] { ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            return string.Join(" ", pieces);
         }
 
         private static string GetPanelDisplayName(string key)

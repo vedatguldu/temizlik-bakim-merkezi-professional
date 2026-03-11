@@ -81,7 +81,7 @@ namespace TemizlikMasaUygulamasi
         private static HttpClient CreateClient()
         {
             var client = new HttpClient();
-            client.DefaultRequestHeaders.Add("User-Agent", "TemizlikBakimMerkeziProfessional/3.1.2");
+            client.DefaultRequestHeaders.Add("User-Agent", "TemizlikBakimMerkeziProfessional/3.1.3");
             client.DefaultRequestHeaders.Add("Accept", "application/vnd.github+json");
             return client;
         }

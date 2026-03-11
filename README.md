@@ -61,7 +61,7 @@ cd ./TemizlikMasaUygulamasi
 Üretilen dosyalar:
 
 - Self-contained yayın: `publish/win-x64/TemizlikMasaUygulamasi.exe`
-- Kurulum dosyası: `artifacts/setup/TemizlikBakimMerkezi-Professional-v3_1-Setup.exe`
+- Kurulum dosyası: `artifacts/setup/TemizlikBakimMerkezi-Professional-v3_1_1-Setup.exe`
 
 ## GitHub Üzerinden Güncelleme
 

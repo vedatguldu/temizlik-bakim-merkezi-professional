@@ -67,7 +67,8 @@ cd ./TemizlikMasaUygulamasi
 
 - Uygulama açılışta GitHub Releases üzerinden güncelleme denetimi yapar.
 - Dashboard içinde `_Güncelleme Denetle` butonu ile manuel kontrol yapılabilir.
-- Yeni sürüm varsa kullanıcıya bildirim penceresi gösterilir ve indirme bağlantısı açılır.
+- Yeni sürüm varsa kullanıcı onayı ile kurulum paketi otomatik indirilir ve sessiz güncelleme başlatılır.
+- Güncelleme tamamlandığında uygulama otomatik olarak yeniden açılır.
 - GitHub release pipeline dosyası: `.github/workflows/release.yml`
 
 ## Not

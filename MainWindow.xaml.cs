@@ -2153,7 +2153,7 @@ namespace TemizlikMasaUygulamasi
         private string GetApplicationVersion()
         {
             var version = Assembly.GetExecutingAssembly().GetName().Version;
-            return version == null ? "3.1.1" : $"{version.Major}.{version.Minor}.{version.Build}";
+            return version == null ? "3.1.2" : $"{version.Major}.{version.Minor}.{version.Build}";
         }
 
         private void SetFeatureHubOutput(string title, IEnumerable<string> lines)
@@ -2322,7 +2322,7 @@ namespace TemizlikMasaUygulamasi
                 var versionText = GetApplicationVersion();
                 if (!Version.TryParse(versionText, out var currentVersion))
                 {
-                    currentVersion = new Version(3, 1, 1);
+                    currentVersion = new Version(3, 1, 2);
                 }
 
                 var result = await GitHubUpdateService.CheckLatestReleaseAsync(

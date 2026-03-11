@@ -2,7 +2,8 @@
 #define MyAppVersion "3.1.2"
 #define MyAppPublisher "Vedat Güldü"
 #define MyAppExeName "TemizlikMasaUygulamasi.exe"
-#define MyAppURL "https://example.invalid"
+#define MyAppURL "https://github.com/vedatguldu/temizlik-bakim-merkezi-professional"
+#define MyAppUpdatesURL "https://github.com/vedatguldu/temizlik-bakim-merkezi-professional/releases/latest"
 #define SourcePublishDir "..\\publish\\win-x64"
 
 [Setup]
@@ -12,7 +13,7 @@ AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
-AppUpdatesURL={#MyAppURL}
+AppUpdatesURL={#MyAppUpdatesURL}
 DefaultDirName={autopf}\Temizlik Bakım Merkezi Professional
 DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
@@ -24,7 +25,7 @@ WizardSmallImageFile=assets\wizard-small.bmp
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 ChangesAssociations=no
-DisableDirPage=no
+DisableDirPage=auto
 DisableReadyMemo=no
 DisableProgramGroupPage=yes
 OutputDir=..\artifacts\setup
@@ -33,9 +34,9 @@ SetupIconFile=
 UninstallDisplayIcon={app}\{#MyAppExeName}
 PrivilegesRequired=admin
 PrivilegesRequiredOverridesAllowed=dialog
-UsePreviousAppDir=no
-UsePreviousLanguage=no
-UsePreviousTasks=no
+UsePreviousAppDir=yes
+UsePreviousLanguage=yes
+UsePreviousTasks=yes
 SetupLogging=yes
 
 [Languages]

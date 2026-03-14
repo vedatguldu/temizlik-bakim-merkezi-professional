@@ -37,6 +37,8 @@ namespace TemizlikMasaUygulamasi
         private readonly string _reportsDirectory;
         private readonly string _tributeConfigPath;
         private readonly string _profilePath;
+        private readonly string _uiPreferencesPath;
+        private readonly string _proLicensePath;
 
         private readonly List<TaskExecutionRecord> _executionHistory = new();
         private readonly List<LargeFileRecord> _lastLargeFiles = new();
@@ -57,6 +59,10 @@ namespace TemizlikMasaUygulamasi
         private bool _openMenuOnAltKeyUp;
         private string _lastUpdateSummary = "Güncelleme durumu henüz denetlenmedi.";
         private TributeConfig _tributeConfig = new();
+        private UiPreferences _uiPreferences = new();
+        private bool _isLifetimeProUnlocked;
+        private readonly List<StartupTipItem> _startupTips = new();
+        private int _startupTipIndex;
 
         public MainWindow()
         {
@@ -68,6 +74,8 @@ namespace TemizlikMasaUygulamasi
             _reportsDirectory = Path.Combine(_dataDirectory, "Raporlar");
             _tributeConfigPath = Path.Combine(_dataDirectory, "tribute-config.json");
             _profilePath = Path.Combine(_dataDirectory, "bakim-profil.json");
+            _uiPreferencesPath = Path.Combine(_dataDirectory, "ui-preferences.json");
+            _proLicensePath = Path.Combine(_dataDirectory, "pro-lifetime-license.json");
         }
 
         [DllImport("Shell32.dll", CharSet = CharSet.Unicode)]
@@ -80,11 +88,14 @@ namespace TemizlikMasaUygulamasi
             Title = $"Temizlik ve Bakım Merkezi Professional v{appVersion}";
 
             EnsureDirectories();
+            LoadUiPreferences();
+            LoadLifetimeProLicense();
             PopulateScenarioPresets();
             PopulateScheduleSelectors();
             LoadTributeConfig();
             ApplyTributeToUi();
             RefreshAutomaticAccessibilityNames();
+            InitializeStartupTips();
 
             LargeFileScanPathBox.Text = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             FolderSizeRootBox.Text = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
@@ -95,8 +106,25 @@ namespace TemizlikMasaUygulamasi
                 SourceList.SelectedIndex = 0;
             }
 
+            _screenReaderAnnouncementsEnabled = _uiPreferences.ScreenReaderAnnouncementsEnabled;
+            ScreenReaderAnnouncementsCheck.IsChecked = _uiPreferences.ScreenReaderAnnouncementsEnabled;
+            FontScaleSlider.Value = _uiPreferences.FontScale;
+            HighContrastModeCheck.IsChecked = _uiPreferences.HighContrastEnabled;
+            SettingsHighContrastMenuItem.IsChecked = _uiPreferences.HighContrastEnabled;
+            SettingsStartupTipsMenuItem.IsChecked = _uiPreferences.ShowStartupTips;
+            StartupTipsDontShowCheck.IsChecked = !_uiPreferences.ShowStartupTips;
+
+            if (Enum.TryParse<ThemeMode>(_uiPreferences.Theme, out var savedTheme))
+            {
+                _themeMode = savedTheme;
+            }
+            else
+            {
+                _themeMode = ThemeMode.Light;
+            }
+
             SelectRecommended();
-            ApplyTheme(ThemeMode.Light);
+            ApplyTheme(_themeMode, announceStatus: false, persistPreference: false);
             RefreshContrastAudit();
             ShowPanel("Dashboard");
 
@@ -115,6 +143,7 @@ namespace TemizlikMasaUygulamasi
 
             UpdateDashboardSummary();
             _ = CheckForUpdatesAsync(userInitiated: false);
+            ShowStartupTipsIfNeeded();
         }
 
         private void Window_KeyDown(object sender, KeyEventArgs e)
@@ -213,6 +242,7 @@ namespace TemizlikMasaUygulamasi
         {
             var normalizedKey = NormalizePanelKey(panelKey);
             _currentPanelKey = normalizedKey;
+            var isDashboard = normalizedKey == "Dashboard";
 
             DashboardPanel.Visibility = Visibility.Collapsed;
             CleanPanel.Visibility = Visibility.Collapsed;
@@ -250,8 +280,42 @@ namespace TemizlikMasaUygulamasi
                     break;
             }
 
+            ModuleShellBorder.Visibility = isDashboard ? Visibility.Collapsed : Visibility.Visible;
+            ModuleShellTitleText.Text = isDashboard ? "Ana Sayfa" : GetPanelDisplayName(normalizedKey);
+            BottomNavBorder.Visibility = isDashboard ? Visibility.Visible : Visibility.Collapsed;
+            HeaderBorder.Visibility = isDashboard ? Visibility.Visible : Visibility.Collapsed;
+            StatusBorder.Visibility = isDashboard ? Visibility.Visible : Visibility.Collapsed;
+
+            RunAsAdminButton.IsTabStop = isDashboard;
+            ToggleFullScreenButton.IsTabStop = isDashboard;
+
             UpdateActiveNavigation();
             UpdateDashboardSummary();
+
+            Dispatcher.BeginInvoke(new Action(() => FocusActivePanel(normalizedKey)));
+        }
+
+        private void FocusActivePanel(string panelKey)
+        {
+            var panel = panelKey switch
+            {
+                "Clean" => (FrameworkElement)CleanPanel,
+                "System" => SystemPanel,
+                "Reports" => ReportsPanel,
+                "Accessibility" => AccessibilityPanel,
+                "Tribute" => TributePanel,
+                "Pro" => ProPanel,
+                _ => DashboardPanel,
+            };
+
+            panel.Focus();
+            MoveFocus(new TraversalRequest(FocusNavigationDirection.First));
+        }
+
+        private void BackToDashboardButton_Click(object sender, RoutedEventArgs e)
+        {
+            ShowPanel("Dashboard");
+            SetStatus("Ana sayfaya dönüldü.");
         }
 
         private static string NormalizePanelKey(string panelKey)
@@ -365,19 +429,20 @@ namespace TemizlikMasaUygulamasi
             ApplyTheme(ThemeMode.Dark);
         }
 
-        private void ApplyTheme(ThemeMode mode)
+        private void ApplyTheme(ThemeMode mode, bool announceStatus = true, bool persistPreference = true)
         {
             var wasAlreadyActive = _themeMode == mode;
             _themeMode = mode;
+            var highContrast = HighContrastModeCheck.IsChecked == true;
 
-            var appBg = mode == ThemeMode.Light ? ColorFromHex("#F4F7FC") : ColorFromHex("#0B0F14");
-            var cardBg = mode == ThemeMode.Light ? ColorFromHex("#FFFFFF") : ColorFromHex("#11161D");
-            var panelBg = mode == ThemeMode.Light ? ColorFromHex("#E2E9F5") : ColorFromHex("#17202B");
-            var text = mode == ThemeMode.Light ? ColorFromHex("#111111") : ColorFromHex("#F8FAFC");
-            var secondaryText = mode == ThemeMode.Light ? ColorFromHex("#1F2937") : ColorFromHex("#E5E7EB");
-            var accent = mode == ThemeMode.Light ? ColorFromHex("#004A7C") : ColorFromHex("#8BD3FF");
-            var accentText = mode == ThemeMode.Light ? ColorFromHex("#FFFFFF") : ColorFromHex("#001018");
-            var strongBorder = mode == ThemeMode.Light ? ColorFromHex("#314158") : ColorFromHex("#CFE7FF");
+            var appBg = highContrast ? ColorFromHex("#000000") : (mode == ThemeMode.Light ? ColorFromHex("#F4F7FC") : ColorFromHex("#0B0F14"));
+            var cardBg = highContrast ? ColorFromHex("#000000") : (mode == ThemeMode.Light ? ColorFromHex("#FFFFFF") : ColorFromHex("#11161D"));
+            var panelBg = highContrast ? ColorFromHex("#111111") : (mode == ThemeMode.Light ? ColorFromHex("#E2E9F5") : ColorFromHex("#17202B"));
+            var text = highContrast ? ColorFromHex("#FFFFFF") : (mode == ThemeMode.Light ? ColorFromHex("#111111") : ColorFromHex("#F8FAFC"));
+            var secondaryText = highContrast ? ColorFromHex("#F7F7F7") : (mode == ThemeMode.Light ? ColorFromHex("#1F2937") : ColorFromHex("#E5E7EB"));
+            var accent = highContrast ? ColorFromHex("#00A8FF") : (mode == ThemeMode.Light ? ColorFromHex("#004A7C") : ColorFromHex("#8BD3FF"));
+            var accentText = highContrast ? ColorFromHex("#000000") : (mode == ThemeMode.Light ? ColorFromHex("#FFFFFF") : ColorFromHex("#001018"));
+            var strongBorder = highContrast ? ColorFromHex("#FFFFFF") : (mode == ThemeMode.Light ? ColorFromHex("#314158") : ColorFromHex("#CFE7FF"));
 
             SetThemeBrush("AppBackgroundBrush", appBg);
             SetThemeBrush("SurfaceBrush", cardBg);
@@ -400,26 +465,57 @@ namespace TemizlikMasaUygulamasi
             UpdateThemeButtons();
 
             RefreshContrastAudit();
-            if (wasAlreadyActive)
+            if (announceStatus && wasAlreadyActive)
             {
                 SetStatus(mode == ThemeMode.Light ? "Aydınlık tema zaten etkin." : "Karanlık tema zaten etkin.");
             }
-            else
+            else if (announceStatus)
             {
                 SetStatus(mode == ThemeMode.Light ? "Aydınlık tema uygulandı." : "Karanlık tema uygulandı.");
             }
+
+            if (persistPreference)
+            {
+                _uiPreferences.Theme = mode.ToString();
+                _uiPreferences.HighContrastEnabled = highContrast;
+                SaveUiPreferences();
+            }
+
             UpdateDashboardSummary();
         }
 
         private void UpdateThemeButtons()
         {
             var lightActive = _themeMode == ThemeMode.Light;
-            ThemeLightButton.Content = lightActive ? "_Aydınlık Tema (Etkin)" : "_Aydınlık Tema";
-            ThemeDarkButton.Content = lightActive ? "_Karanlık Tema" : "_Karanlık Tema (Etkin)";
-            ThemeLightButton.ToolTip = lightActive ? "Aydınlık tema şu anda etkin." : "Aydınlık temaya geç.";
-            ThemeDarkButton.ToolTip = lightActive ? "Karanlık temaya geç." : "Karanlık tema şu anda etkin.";
-            ThemeStateText.Text = $"Tema: {GetThemeDisplayName()}";
+            SettingsThemeLightMenuItem.IsChecked = lightActive;
+            SettingsThemeDarkMenuItem.IsChecked = !lightActive;
+            SettingsHighContrastMenuItem.IsChecked = HighContrastModeCheck.IsChecked == true;
+            SettingsStartupTipsMenuItem.IsChecked = _uiPreferences.ShowStartupTips;
+            ThemeStateText.Text = HighContrastModeCheck.IsChecked == true
+                ? $"Tema: {GetThemeDisplayName()} + Yüksek Kontrast"
+                : $"Tema: {GetThemeDisplayName()}";
             RefreshAutomaticAccessibilityNames();
+        }
+
+        private void ToggleHighContrastFromMenu_Click(object sender, RoutedEventArgs e)
+        {
+            var enabled = SettingsHighContrastMenuItem.IsChecked;
+            HighContrastModeCheck.IsChecked = enabled;
+            _uiPreferences.HighContrastEnabled = enabled;
+            ApplyTheme(_themeMode, announceStatus: true, persistPreference: true);
+            SetStatus(enabled
+                ? "Yüksek kontrast modu yalnızca uygulama içinde etkinleştirildi."
+                : "Yüksek kontrast modu kapatıldı.");
+        }
+
+        private void ToggleStartupTipsFromMenu_Click(object sender, RoutedEventArgs e)
+        {
+            _uiPreferences.ShowStartupTips = SettingsStartupTipsMenuItem.IsChecked;
+            StartupTipsDontShowCheck.IsChecked = !_uiPreferences.ShowStartupTips;
+            SaveUiPreferences();
+            SetStatus(_uiPreferences.ShowStartupTips
+                ? "Başlangıç ipuçları tekrar etkinleştirildi."
+                : "Başlangıç ipuçları kapatıldı.");
         }
 
         private void SetThemeBrush(string key, Color color)
@@ -456,6 +552,9 @@ namespace TemizlikMasaUygulamasi
             FolderSizeBorder.Background = brush;
             ProfileBorder.Background = brush;
             NineFeaturesBorder.Background = brush;
+            ProLicenseBorder.Background = brush;
+            ProPlusBorder.Background = brush;
+            ModuleShellBorder.Background = brush;
             DashboardHeroBorder.Background = brush;
             DashboardStatusBorder.Background = brush;
             DashboardQuickActionsBorder.Background = brush;
@@ -1223,10 +1322,12 @@ namespace TemizlikMasaUygulamasi
             TributeLongNarrativeBox.FontSize = Math.Max(14, FontScaleSlider.Value - 1);
             FeatureHubOutputBox.FontSize = Math.Max(14, FontScaleSlider.Value - 1);
 
-            if (HighContrastModeCheck.IsChecked == true)
-            {
-                ApplyTheme(ThemeMode.Dark);
-            }
+            _uiPreferences.FontScale = FontScaleSlider.Value;
+            _uiPreferences.ScreenReaderAnnouncementsEnabled = _screenReaderAnnouncementsEnabled;
+            _uiPreferences.HighContrastEnabled = HighContrastModeCheck.IsChecked == true;
+            SaveUiPreferences();
+
+            ApplyTheme(_themeMode, announceStatus: false, persistPreference: true);
 
             RefreshContrastAudit();
             SetStatus("Erişilebilirlik ayarları uygulandı.");
@@ -1239,7 +1340,12 @@ namespace TemizlikMasaUygulamasi
             ScreenReaderAnnouncementsCheck.IsChecked = true;
             _screenReaderAnnouncementsEnabled = true;
             FontSize = 18;
-            ApplyTheme(ThemeMode.Light);
+            _uiPreferences.FontScale = 18;
+            _uiPreferences.ScreenReaderAnnouncementsEnabled = true;
+            _uiPreferences.HighContrastEnabled = false;
+            HighContrastModeCheck.IsChecked = false;
+            SaveUiPreferences();
+            ApplyTheme(ThemeMode.Light, announceStatus: false, persistPreference: true);
             SetStatus("Erişilebilirlik ayarları varsayılana döndürüldü.");
         }
 
@@ -1431,6 +1537,11 @@ namespace TemizlikMasaUygulamasi
 
         private void AnalyzeHealthScore_Click(object sender, RoutedEventArgs e)
         {
+            if (!EnsureLifetimeProAccess("Sağlık skoru analizi"))
+            {
+                return;
+            }
+
             var (score, recommendations) = CalculateHealthScore();
             HealthScoreText.Text = $"Skor: {score}/100";
             HealthRecommendationsList.Items.Clear();
@@ -1489,6 +1600,11 @@ namespace TemizlikMasaUygulamasi
 
         private void ApplyHealthRecommendations_Click(object sender, RoutedEventArgs e)
         {
+            if (!EnsureLifetimeProAccess("Sağlık önerilerini uygula"))
+            {
+                return;
+            }
+
             var (_, recs) = CalculateHealthScore();
             if (recs.Any(r => r.Contains("Disk boş", StringComparison.OrdinalIgnoreCase)))
             {
@@ -1517,6 +1633,11 @@ namespace TemizlikMasaUygulamasi
 
         private void ApplyScenarioPreset_Click(object sender, RoutedEventArgs e)
         {
+            if (!EnsureLifetimeProAccess("Senaryo motoru"))
+            {
+                return;
+            }
+
             var selected = ScenarioPresetBox.SelectedItem?.ToString() ?? string.Empty;
             SetAllTasksChecked(false);
 
@@ -1564,10 +1685,16 @@ namespace TemizlikMasaUygulamasi
             }
 
             AppendLog($"Senaryo uygulandı: {selected}");
+            SetStatus($"Senaryo uygulandı: {selected}");
         }
 
         private async void ScanLargeFiles_Click(object sender, RoutedEventArgs e)
         {
+            if (!EnsureLifetimeProAccess("Büyük dosya radar"))
+            {
+                return;
+            }
+
             var root = LargeFileScanPathBox.Text.Trim();
             if (!Directory.Exists(root))
             {
@@ -1630,6 +1757,11 @@ namespace TemizlikMasaUygulamasi
 
         private void ExportLargeFilesCsv_Click(object sender, RoutedEventArgs e)
         {
+            if (!EnsureLifetimeProAccess("Büyük dosya CSV dışa aktarım"))
+            {
+                return;
+            }
+
             if (_lastLargeFiles.Count == 0)
             {
                 SetStatus("Önce tarama yapın.");
@@ -1663,6 +1795,11 @@ namespace TemizlikMasaUygulamasi
 
         private async void CreateZipBackup_Click(object sender, RoutedEventArgs e)
         {
+            if (!EnsureLifetimeProAccess("Zip yedek oluştur"))
+            {
+                return;
+            }
+
             var source = BackupSourceBox.Text.Trim();
             var target = BackupTargetBox.Text.Trim();
 
@@ -1683,6 +1820,11 @@ namespace TemizlikMasaUygulamasi
 
         private async void CreateRestorePoint_Click(object sender, RoutedEventArgs e)
         {
+            if (!EnsureLifetimeProAccess("Geri yükleme noktası"))
+            {
+                return;
+            }
+
             await RunSingleOperationAsync(
                 "Geri yükleme noktası",
                 true,
@@ -1695,6 +1837,11 @@ namespace TemizlikMasaUygulamasi
 
         private void AnalyzeReportHistory_Click(object sender, RoutedEventArgs e)
         {
+            if (!EnsureLifetimeProAccess("Geçmiş analizi"))
+            {
+                return;
+            }
+
             var summary = BuildHistorySummary();
             AnalyticsOutputBox.Text =
                 $"Toplam rapor: {summary.TotalReports}{Environment.NewLine}" +
@@ -1703,10 +1850,16 @@ namespace TemizlikMasaUygulamasi
                 $"Hatalı görev: {summary.FailedTasks}{Environment.NewLine}" +
                 $"Başarı oranı: {summary.SuccessRate:P1}{Environment.NewLine}" +
                 $"Son rapor: {summary.LastReportDate:yyyy-MM-dd HH:mm:ss}";
+            SetStatus("Geçmiş analizi tamamlandı.");
         }
 
         private void WriteTrendRecommendations_Click(object sender, RoutedEventArgs e)
         {
+            if (!EnsureLifetimeProAccess("Trend önerileri"))
+            {
+                return;
+            }
+
             var summary = BuildHistorySummary();
             var tips = new List<string>();
 
@@ -1728,6 +1881,71 @@ namespace TemizlikMasaUygulamasi
             tips.Add("Bu v3 sürümü Olcay Aşçı anısına sürdürülebilir bakım yaklaşımı taşır.");
 
             AnalyticsOutputBox.Text += Environment.NewLine + Environment.NewLine + string.Join(Environment.NewLine, tips.Select(t => $"- {t}"));
+            SetStatus("Trend önerileri üretildi.");
+        }
+
+        private void GenerateSmartMaintenancePlan_Click(object sender, RoutedEventArgs e)
+        {
+            if (!EnsureLifetimeProAccess("Akıllı bakım planı"))
+            {
+                return;
+            }
+
+            var (score, recommendations) = CalculateHealthScore();
+            var plan = new List<string>
+            {
+                "Akıllı bakım planı",
+                $"Sistem sağlık skoru: {score}/100",
+                string.Empty,
+                "Öncelikli adımlar:",
+            };
+
+            plan.AddRange(recommendations.Select(r => $"- {r}"));
+            plan.Add(string.Empty);
+            plan.Add("Önerilen sıra:");
+            plan.Add("1. Ön Uçuş Kontrolü");
+            plan.Add("2. Temp Analizi + Büyük Dosya Radar");
+            plan.Add("3. Ağ Tanılama + DNS gecikme testi");
+            plan.Add("4. JSON raporu üret ve profil dışa aktar");
+
+            SetFeatureHubOutput("Akıllı bakım planı", plan);
+            SetStatus("Akıllı bakım planı üretildi.");
+        }
+
+        private void RunRiskForecastScan_Click(object sender, RoutedEventArgs e)
+        {
+            if (!EnsureLifetimeProAccess("Kritik risk erken uyarı"))
+            {
+                return;
+            }
+
+            var risks = new List<string>();
+            var cDrive = DriveInfo.GetDrives().FirstOrDefault(d => d.IsReady && d.Name.StartsWith("C", StringComparison.OrdinalIgnoreCase));
+            if (cDrive != null)
+            {
+                var freeRatio = (double)cDrive.AvailableFreeSpace / cDrive.TotalSize;
+                if (freeRatio < 0.10)
+                {
+                    risks.Add("Disk alanı kritik seviyede (< %10). Acil temizlik önerilir.");
+                }
+                else if (freeRatio < 0.20)
+                {
+                    risks.Add("Disk alanı düşük (< %20). Haftalık derin temizlik önerilir.");
+                }
+            }
+
+            if (_executionHistory.Count(x => x.Status == "Failed") >= 3)
+            {
+                risks.Add("Son görevlerde tekrar eden hata var. Yönetici modu ve ön uçuş kontrolü önerilir.");
+            }
+
+            if (risks.Count == 0)
+            {
+                risks.Add("Kritik risk sinyali bulunmadı. Sistem dengeli görünüyor.");
+            }
+
+            SetFeatureHubOutput("Kritik risk erken uyarı", risks);
+            SetStatus("Kritik risk taraması tamamlandı.");
         }
 
         private ReportHistorySummary BuildHistorySummary()
@@ -1772,6 +1990,11 @@ namespace TemizlikMasaUygulamasi
 
         private async void RunNetworkDiagnostics_Click(object sender, RoutedEventArgs e)
         {
+            if (!EnsureLifetimeProAccess("Ağ tanılama"))
+            {
+                return;
+            }
+
             var host = string.IsNullOrWhiteSpace(NetworkTestHostBox.Text) ? "1.1.1.1" : NetworkTestHostBox.Text.Trim();
             await RunSingleOperationAsync("Ağ tanılama", false, async token =>
             {
@@ -1787,6 +2010,11 @@ namespace TemizlikMasaUygulamasi
 
         private async void AnalyzeFolderSizes_Click(object sender, RoutedEventArgs e)
         {
+            if (!EnsureLifetimeProAccess("Klasör boyut analizi"))
+            {
+                return;
+            }
+
             var root = FolderSizeRootBox.Text.Trim();
             if (!Directory.Exists(root))
             {
@@ -1853,6 +2081,11 @@ namespace TemizlikMasaUygulamasi
 
         private void ExportMaintenanceProfile_Click(object sender, RoutedEventArgs e)
         {
+            if (!EnsureLifetimeProAccess("Bakım profili dışa aktarma"))
+            {
+                return;
+            }
+
             try
             {
                 EnsureDirectories();
@@ -1875,6 +2108,11 @@ namespace TemizlikMasaUygulamasi
 
         private void ImportMaintenanceProfile_Click(object sender, RoutedEventArgs e)
         {
+            if (!EnsureLifetimeProAccess("Bakım profili içe aktarma"))
+            {
+                return;
+            }
+
             try
             {
                 if (!File.Exists(_profilePath))
@@ -2036,6 +2274,11 @@ namespace TemizlikMasaUygulamasi
 
         private async void RunMultiDnsLatencyTest_Click(object sender, RoutedEventArgs e)
         {
+            if (!EnsureLifetimeProAccess("DNS gecikme testi"))
+            {
+                return;
+            }
+
             await RunSingleOperationAsync("DNS çoklu gecikme testi", false, async token =>
             {
                 var hosts = new[] { "1.1.1.1", "8.8.8.8", "9.9.9.9" };
@@ -2061,6 +2304,11 @@ namespace TemizlikMasaUygulamasi
 
         private async void BackupHostsFile_Click(object sender, RoutedEventArgs e)
         {
+            if (!EnsureLifetimeProAccess("Hosts yedekleme"))
+            {
+                return;
+            }
+
             await RunSingleOperationAsync("Hosts dosyası yedekleme", false, _ =>
             {
                 EnsureDirectories();
@@ -2084,6 +2332,11 @@ namespace TemizlikMasaUygulamasi
 
         private async void GenerateLast24hErrorSummary_Click(object sender, RoutedEventArgs e)
         {
+            if (!EnsureLifetimeProAccess("Son 24 saat hata özeti"))
+            {
+                return;
+            }
+
             await RunSingleOperationAsync("Son 24 saat hata özeti", false, async token =>
             {
                 var query = "qe System /q:\"*[System[(Level=2) and TimeCreated[timediff(@SystemTime)<=86400000]]]\" /f:text /c:40";
@@ -2193,7 +2446,7 @@ namespace TemizlikMasaUygulamasi
         private string GetApplicationVersion()
         {
             var version = Assembly.GetExecutingAssembly().GetName().Version;
-            return version == null ? "3.1.3" : $"{version.Major}.{version.Minor}.{version.Build}";
+            return version == null ? "3.1.4" : $"{version.Major}.{version.Minor}.{version.Build}";
         }
 
         private void SetFeatureHubOutput(string title, IEnumerable<string> lines)
@@ -2290,6 +2543,258 @@ namespace TemizlikMasaUygulamasi
             Directory.CreateDirectory(_reportsDirectory);
         }
 
+        private void LoadUiPreferences()
+        {
+            _uiPreferences = new UiPreferences();
+
+            try
+            {
+                if (!File.Exists(_uiPreferencesPath))
+                {
+                    return;
+                }
+
+                var json = File.ReadAllText(_uiPreferencesPath, Encoding.UTF8);
+                var loaded = JsonSerializer.Deserialize<UiPreferences>(json);
+                if (loaded != null)
+                {
+                    _uiPreferences = loaded;
+                }
+            }
+            catch (Exception ex)
+            {
+                AppendLog($"Arayüz tercihleri okunamadı: {ex.Message}");
+            }
+        }
+
+        private void SaveUiPreferences()
+        {
+            try
+            {
+                EnsureDirectories();
+                _uiPreferences.Theme = _themeMode.ToString();
+                _uiPreferences.HighContrastEnabled = HighContrastModeCheck.IsChecked == true;
+                _uiPreferences.ScreenReaderAnnouncementsEnabled = ScreenReaderAnnouncementsCheck.IsChecked == true;
+                _uiPreferences.FontScale = FontScaleSlider.Value;
+                var json = JsonSerializer.Serialize(_uiPreferences, new JsonSerializerOptions { WriteIndented = true });
+                File.WriteAllText(_uiPreferencesPath, json, Encoding.UTF8);
+            }
+            catch (Exception ex)
+            {
+                AppendLog($"Arayüz tercihleri kaydedilemedi: {ex.Message}");
+            }
+        }
+
+        private void InitializeStartupTips()
+        {
+            _startupTips.Clear();
+            _startupTips.Add(new StartupTipItem
+            {
+                Title = "Alt Menü Navigasyonu",
+                Description = "Alt tuşuna basarak Uygulama, Modüller ve Ayarlar menülerine erişebilir; menü harfleriyle hızlı geçiş yapabilirsiniz.",
+            });
+            _startupTips.Add(new StartupTipItem
+            {
+                Title = "Temizlik Modülü",
+                Description = "Önerilen seçimler ile güvenli temizlik başlatabilir; işlem durumu canlı olarak alt durum satırında takip edilir.",
+            });
+            _startupTips.Add(new StartupTipItem
+            {
+                Title = "Rapor ve Geri Dönüş",
+                Description = "JSON raporu üreterek bakım geçmişini saklayın; Pro analizler bu geçmişi kullanarak öneri üretir.",
+            });
+            _startupTips.Add(new StartupTipItem
+            {
+                Title = "Erişilebilirlik Ayarları",
+                Description = "Yazı boyutu, uygulama içi yüksek kontrast ve ekran okuyucu anonslarını Ayarlar menüsünden yönetebilirsiniz.",
+            });
+            _startupTips.Add(new StartupTipItem
+            {
+                Title = "Pro Özellikler",
+                Description = "Ömür boyu lisans etkinleştirildiğinde gelişmiş analiz, risk tahmini ve akıllı bakım planı özellikleri açılır.",
+            });
+
+            _startupTipIndex = 0;
+            UpdateStartupTipView();
+        }
+
+        private void ShowStartupTipsIfNeeded()
+        {
+            StartupTipsOverlay.Visibility = _uiPreferences.ShowStartupTips ? Visibility.Visible : Visibility.Collapsed;
+            UpdateStartupTipView();
+        }
+
+        private void UpdateStartupTipView()
+        {
+            if (_startupTips.Count == 0)
+            {
+                return;
+            }
+
+            _startupTipIndex = Math.Clamp(_startupTipIndex, 0, _startupTips.Count - 1);
+            var current = _startupTips[_startupTipIndex];
+            StartupTipTitleText.Text = current.Title;
+            StartupTipBodyText.Text = current.Description;
+            StartupTipsCounterText.Text = $"İpucu {_startupTipIndex + 1}/{_startupTips.Count}";
+            StartupTipPrevButton.IsEnabled = _startupTipIndex > 0;
+            StartupTipNextButton.Content = _startupTipIndex >= _startupTips.Count - 1 ? "_Bitir" : "_Sonraki";
+        }
+
+        private void StartupTipPrevButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_startupTipIndex <= 0)
+            {
+                return;
+            }
+
+            _startupTipIndex--;
+            UpdateStartupTipView();
+        }
+
+        private void StartupTipNextButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_startupTipIndex >= _startupTips.Count - 1)
+            {
+                StartupTipsOverlay.Visibility = Visibility.Collapsed;
+                SetStatus("Başlangıç ipuçları tamamlandı.");
+                return;
+            }
+
+            _startupTipIndex++;
+            UpdateStartupTipView();
+        }
+
+        private void StartupTipCloseButton_Click(object sender, RoutedEventArgs e)
+        {
+            StartupTipsOverlay.Visibility = Visibility.Collapsed;
+            SetStatus("Başlangıç ipuçları kapatıldı.");
+        }
+
+        private void StartupTipsDontShowCheck_Changed(object sender, RoutedEventArgs e)
+        {
+            _uiPreferences.ShowStartupTips = StartupTipsDontShowCheck.IsChecked != true;
+            SettingsStartupTipsMenuItem.IsChecked = _uiPreferences.ShowStartupTips;
+            SaveUiPreferences();
+        }
+
+        private void LoadLifetimeProLicense()
+        {
+            _isLifetimeProUnlocked = false;
+
+            try
+            {
+                if (!File.Exists(_proLicensePath))
+                {
+                    UpdateProLicenseUi();
+                    return;
+                }
+
+                var json = File.ReadAllText(_proLicensePath, Encoding.UTF8);
+                var info = JsonSerializer.Deserialize<ProLifetimeLicense>(json);
+                if (info != null && ValidateLifetimeLicenseKey(info.LicenseKey))
+                {
+                    _isLifetimeProUnlocked = true;
+                    ProLifetimeKeyBox.Text = info.LicenseKey;
+                }
+            }
+            catch (Exception ex)
+            {
+                AppendLog($"Pro lisans bilgisi okunamadı: {ex.Message}");
+            }
+
+            UpdateProLicenseUi();
+        }
+
+        private void SaveLifetimeProLicense(string key)
+        {
+            try
+            {
+                EnsureDirectories();
+                var info = new ProLifetimeLicense
+                {
+                    LicenseKey = key,
+                    ActivatedAt = DateTime.Now,
+                };
+                var json = JsonSerializer.Serialize(info, new JsonSerializerOptions { WriteIndented = true });
+                File.WriteAllText(_proLicensePath, json, Encoding.UTF8);
+            }
+            catch (Exception ex)
+            {
+                AppendLog($"Pro lisans kaydedilemedi: {ex.Message}");
+            }
+        }
+
+        private bool ValidateLifetimeLicenseKey(string key)
+        {
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                return false;
+            }
+
+            var normalized = key.Trim().ToUpperInvariant();
+            if (!normalized.StartsWith("TBM-PRO-LIFETIME-", StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            var lastSegment = normalized.Substring("TBM-PRO-LIFETIME-".Length);
+            var parts = lastSegment.Split('-');
+            if (parts.Length != 2)
+            {
+                return false;
+            }
+
+            return parts.All(p => p.Length == 4 && p.All(char.IsLetterOrDigit));
+        }
+
+        private void ActivateLifetimeProButton_Click(object sender, RoutedEventArgs e)
+        {
+            var key = ProLifetimeKeyBox.Text.Trim().ToUpperInvariant();
+            if (!ValidateLifetimeLicenseKey(key))
+            {
+                SetStatus("Lisans anahtarı biçimi geçersiz.");
+                MessageBox.Show(this, "Lisans anahtarı geçersiz. Örnek biçim: TBM-PRO-LIFETIME-AB12-CD34", "Lisans", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            _isLifetimeProUnlocked = true;
+            SaveLifetimeProLicense(key);
+            UpdateProLicenseUi();
+            SetStatus("Ömür boyu Pro lisansı etkinleştirildi.");
+        }
+
+        private void RestoreLifetimeLicenseButton_Click(object sender, RoutedEventArgs e)
+        {
+            LoadLifetimeProLicense();
+            SetStatus(_isLifetimeProUnlocked
+                ? "Ömür boyu lisans doğrulandı."
+                : "Kayıtlı geçerli lisans bulunamadı.");
+        }
+
+        private void UpdateProLicenseUi()
+        {
+            ProLifetimeStatusText.Text = _isLifetimeProUnlocked
+                ? "Durum: Etkin (Ömür Boyu Pro Lisans)"
+                : "Durum: Etkin değil. Pro+ özellikler kilitli.";
+        }
+
+        private bool EnsureLifetimeProAccess(string featureName)
+        {
+            if (_isLifetimeProUnlocked)
+            {
+                return true;
+            }
+
+            SetStatus($"Pro özellik kilitli: {featureName}");
+            MessageBox.Show(
+                this,
+                "Bu özellik yalnızca ömür boyu Pro lisans ile kullanılabilir. Lütfen Pro modülündeki lisans alanından anahtarınızı etkinleştirin.",
+                "Pro Lisans Gerekli",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            return false;
+        }
+
         private static string SanitizeFileName(string input)
         {
             foreach (var c in Path.GetInvalidFileNameChars())
@@ -2326,16 +2831,6 @@ namespace TemizlikMasaUygulamasi
             _ = RunSelectedTasksAsync();
         }
 
-        private void ToggleHighContrastQuick_Click(object sender, RoutedEventArgs e)
-        {
-            HighContrastModeCheck.IsChecked = true;
-            ScreenReaderAnnouncementsCheck.IsChecked = true;
-            _screenReaderAnnouncementsEnabled = true;
-            ApplyTheme(ThemeMode.Dark);
-            ShowPanel("Accessibility");
-            SetStatus("Yüksek kontrast görünümü açıldı.");
-        }
-
         private async void CheckUpdatesNow_Click(object sender, RoutedEventArgs e)
         {
             await CheckForUpdatesAsync(userInitiated: true);
@@ -2362,7 +2857,7 @@ namespace TemizlikMasaUygulamasi
                 var versionText = GetApplicationVersion();
                 if (!Version.TryParse(versionText, out var currentVersion))
                 {
-                    currentVersion = new Version(3, 1, 3);
+                    currentVersion = new Version(3, 1, 4);
                 }
 
                 var result = await GitHubUpdateService.CheckLatestReleaseAsync(
@@ -2524,7 +3019,7 @@ namespace TemizlikMasaUygulamasi
         private static HttpClient CreateUpdateDownloadClient()
         {
             var client = new HttpClient();
-            client.DefaultRequestHeaders.Add("User-Agent", "TemizlikBakimMerkeziProfessional-Updater/3.1.3");
+            client.DefaultRequestHeaders.Add("User-Agent", "TemizlikBakimMerkeziProfessional-Updater/3.1.4");
             return client;
         }
 
@@ -2628,7 +3123,16 @@ namespace TemizlikMasaUygulamasi
 
         private static string NormalizeAccessibleLabel(object? content)
         {
-            var text = content?.ToString() ?? string.Empty;
+            var text = content switch
+            {
+                null => string.Empty,
+                string s => s,
+                AccessText accessText => accessText.Text,
+                TextBlock textBlock => textBlock.Text,
+                FrameworkElement => string.Empty,
+                _ => content.ToString() ?? string.Empty,
+            };
+
             if (string.IsNullOrWhiteSpace(text))
             {
                 return string.Empty;
@@ -2765,6 +3269,33 @@ namespace TemizlikMasaUygulamasi
             public double FontScale { get; set; } = 18;
 
             public Dictionary<string, bool> Tasks { get; set; } = new();
+        }
+
+        private sealed class UiPreferences
+        {
+            public string Theme { get; set; } = ThemeMode.Light.ToString();
+
+            public bool HighContrastEnabled { get; set; }
+
+            public bool ShowStartupTips { get; set; } = true;
+
+            public bool ScreenReaderAnnouncementsEnabled { get; set; } = true;
+
+            public double FontScale { get; set; } = 18;
+        }
+
+        private sealed class ProLifetimeLicense
+        {
+            public string LicenseKey { get; set; } = string.Empty;
+
+            public DateTime ActivatedAt { get; set; }
+        }
+
+        private sealed class StartupTipItem
+        {
+            public string Title { get; set; } = string.Empty;
+
+            public string Description { get; set; } = string.Empty;
         }
 
         private enum ThemeMode

@@ -5,10 +5,10 @@
     <TargetFramework>net7.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
-    <Version>3.1.3</Version>
-    <AssemblyVersion>3.1.3.0</AssemblyVersion>
-    <FileVersion>3.1.3.0</FileVersion>
-    <InformationalVersion>v3.1.3 Professional - Vedat Güldü tarafından Olcay Aşçı anısına</InformationalVersion>
+    <Version>3.1.4</Version>
+    <AssemblyVersion>3.1.4.0</AssemblyVersion>
+    <FileVersion>3.1.4.0</FileVersion>
+    <InformationalVersion>v3.1.4 Professional - Vedat Güldü tarafından Olcay Aşçı anısına</InformationalVersion>
     <NeutralLanguage>tr-TR</NeutralLanguage>
     <Product>Temizlik ve Bakım Merkezi Professional</Product>
     <Description>Vedat Güldü tarafından Olcay Aşçı anısına geliştirilen profesyonel masaüstü bakım platformu.</Description>

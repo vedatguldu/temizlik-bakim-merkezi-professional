@@ -1,4 +1,4 @@
-# Temizlik ve Bakım Merkezi Professional v3.1.3
+# Temizlik ve Bakım Merkezi Professional v3.1.4
 
 Bu proje, `temizlik v2.cmd` mirasını modern, erişilebilir ve tam özellikli bir Windows masaüstü uygulamasına dönüştürür.
 
@@ -14,12 +14,32 @@ Bu proje, `temizlik v2.cmd` mirasını modern, erişilebilir ve tam özellikli b
 
 - Alt menü tabanlı gezinme vardır, sekmeli yapı kullanılmaz.
 - Alt tuşu ile erişilebilen menü kısayolları vardır (`_Ana Sayfa`, `_Temizlik`, `S_istem`, `_Raporlar`, `Erişile_bilirlik`, `İt_haf`, `_V3 Özellikler`).
-- Aydınlık ve karanlık tema vardır.
+- Aydınlık ve karanlık tema, `Uygulama > Ayarlar` menüsünden yönetilir.
+- Tema tercihi, yüksek kontrast tercihi ve başlangıç ipucu tercihi kalıcı olarak saklanır.
+- Yüksek kontrast yalnızca uygulama içinde uygulanır, sistem geneline etki etmez.
 - Tema renkleri güçlü kontrastla güncellenmiştir.
 - WCAG AAA denetimi için çoklu kontrast ölçümü yapılır:
   - Ana metin / kart
   - Düğme metni / düğme zemini
   - Başlık metni / başlık zemini
+
+## Modül Odak Akışı
+
+- Modüller, seçildiğinde tam odak görünümde açılır.
+- Her modülde `_Geri Dön` düğmesi ile ana sayfaya dönüş sağlanır.
+- Modül görünümünde gereksiz gezinme öğeleri gizlenerek tab dolaşımı sadeleştirilir.
+
+## Başlangıç İpuçları
+
+- Uygulama açılışında adım adım özellik anlatımı sunan ipucu katmanı vardır.
+- `_Önceki` ve `_Sonraki` düğmeleriyle ipuçları arasında gezilebilir.
+- `Bu başlangıç ipuçlarını bir daha gösterme` seçeneği ile ipuçları kalıcı olarak kapatılabilir.
+
+## Pro Lisans Modeli
+
+- Pro+ özellikler `Ömür Boyu Lisans` etkinleştirildiğinde açılır.
+- Lisans, uygulama içinden anahtar girilerek etkinleştirilir ve yerel olarak doğrulanır.
+- Pro+ örnekleri: Akıllı bakım planı üretimi, kritik risk erken uyarı taraması, gelişmiş analiz modülleri.
 
 ## Eklenen 9 Yeni Özellik
 
@@ -61,7 +81,7 @@ cd ./TemizlikMasaUygulamasi
 Üretilen dosyalar:
 
 - Self-contained yayın: `publish/win-x64/TemizlikMasaUygulamasi.exe`
-- Kurulum dosyası: `artifacts/setup/TemizlikBakimMerkezi-Professional-v3_1_3-Setup.exe`
+- Kurulum dosyası: `artifacts/setup/TemizlikBakimMerkezi-Professional-v3_1_4-Setup.exe`
 
 ## GitHub Üzerinden Güncelleme
 

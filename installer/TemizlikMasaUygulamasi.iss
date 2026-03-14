@@ -1,5 +1,5 @@
 #define MyAppName "Temizlik ve Bakım Merkezi Professional"
-#define MyAppVersion "3.1.4"
+#define MyAppVersion "3.1.5"
 #define MyAppPublisher "Vedat Güldü"
 #define MyAppExeName "TemizlikMasaUygulamasi.exe"
 #define MyAppURL "https://github.com/vedatguldu/temizlik-bakim-merkezi-professional"
@@ -29,7 +29,7 @@ DisableDirPage=auto
 DisableReadyMemo=no
 DisableProgramGroupPage=yes
 OutputDir=..\artifacts\setup
-OutputBaseFilename=TemizlikBakimMerkezi-Professional-v3_1_4-Setup
+OutputBaseFilename=TemizlikBakimMerkezi-Professional-v3_1_5-Setup
 SetupIconFile=
 UninstallDisplayIcon={app}\{#MyAppExeName}
 PrivilegesRequired=admin

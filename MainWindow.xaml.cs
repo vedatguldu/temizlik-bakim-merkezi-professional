@@ -6,6 +6,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Json;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
@@ -30,7 +31,10 @@ namespace TemizlikMasaUygulamasi
         private const uint RecycleFlagNoSound = 0x00000004;
         private const string UpdateRepoOwner = "vedatguldu";
         private const string UpdateRepoName = "temizlik-bakim-merkezi-professional";
+        private const string LicenseApiBaseUrl = "https://license.temizlikbakimmerkezi.com";
+        private const string LifetimePurchaseUrl = "https://temizlikbakimmerkezi.com/pro";
         private static readonly HttpClient UpdateDownloadClient = CreateUpdateDownloadClient();
+        private static readonly HttpClient LicenseApiClient = CreateLicenseApiClient();
 
         private readonly string _scheduleTaskName = "TemizlikMasaUygulamasiV3Daily";
         private readonly string _dataDirectory;
@@ -144,6 +148,7 @@ namespace TemizlikMasaUygulamasi
             UpdateDashboardSummary();
             _ = CheckForUpdatesAsync(userInitiated: false);
             ShowStartupTipsIfNeeded();
+            _ = TryValidateStoredLicenseAsync();
         }
 
         private void Window_KeyDown(object sender, KeyEventArgs e)
@@ -2446,7 +2451,7 @@ namespace TemizlikMasaUygulamasi
         private string GetApplicationVersion()
         {
             var version = Assembly.GetExecutingAssembly().GetName().Version;
-            return version == null ? "3.1.4" : $"{version.Major}.{version.Minor}.{version.Build}";
+            return version == null ? "3.1.5" : $"{version.Major}.{version.Minor}.{version.Build}";
         }
 
         private void SetFeatureHubOutput(string title, IEnumerable<string> lines)
@@ -2691,10 +2696,12 @@ namespace TemizlikMasaUygulamasi
 
                 var json = File.ReadAllText(_proLicensePath, Encoding.UTF8);
                 var info = JsonSerializer.Deserialize<ProLifetimeLicense>(json);
-                if (info != null && ValidateLifetimeLicenseKey(info.LicenseKey))
+                if (info != null && !string.IsNullOrWhiteSpace(info.LicenseKey))
                 {
-                    _isLifetimeProUnlocked = true;
                     ProLifetimeKeyBox.Text = info.LicenseKey;
+                    _isLifetimeProUnlocked =
+                        info.LastValidationSucceeded &&
+                        info.LastValidatedAtUtc > DateTime.UtcNow.AddDays(-7);
                 }
             }
             catch (Exception ex)
@@ -2705,16 +2712,11 @@ namespace TemizlikMasaUygulamasi
             UpdateProLicenseUi();
         }
 
-        private void SaveLifetimeProLicense(string key)
+        private void SaveLifetimeProLicense(ProLifetimeLicense info)
         {
             try
             {
                 EnsureDirectories();
-                var info = new ProLifetimeLicense
-                {
-                    LicenseKey = key,
-                    ActivatedAt = DateTime.Now,
-                };
                 var json = JsonSerializer.Serialize(info, new JsonSerializerOptions { WriteIndented = true });
                 File.WriteAllText(_proLicensePath, json, Encoding.UTF8);
             }
@@ -2724,7 +2726,7 @@ namespace TemizlikMasaUygulamasi
             }
         }
 
-        private bool ValidateLifetimeLicenseKey(string key)
+        private bool ValidateLifetimeLicenseKeyFormat(string key)
         {
             if (string.IsNullOrWhiteSpace(key))
             {
@@ -2747,35 +2749,127 @@ namespace TemizlikMasaUygulamasi
             return parts.All(p => p.Length == 4 && p.All(char.IsLetterOrDigit));
         }
 
-        private void ActivateLifetimeProButton_Click(object sender, RoutedEventArgs e)
+        private async void ActivateLifetimeProButton_Click(object sender, RoutedEventArgs e)
         {
             var key = ProLifetimeKeyBox.Text.Trim().ToUpperInvariant();
-            if (!ValidateLifetimeLicenseKey(key))
+            if (!ValidateLifetimeLicenseKeyFormat(key))
             {
                 SetStatus("Lisans anahtarı biçimi geçersiz.");
                 MessageBox.Show(this, "Lisans anahtarı geçersiz. Örnek biçim: TBM-PRO-LIFETIME-AB12-CD34", "Lisans", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
-            _isLifetimeProUnlocked = true;
-            SaveLifetimeProLicense(key);
-            UpdateProLicenseUi();
-            SetStatus("Ömür boyu Pro lisansı etkinleştirildi.");
+            await ActivateOrVerifyLifetimeLicenseAsync(key, userInitiated: true, showSuccessMessage: true);
         }
 
-        private void RestoreLifetimeLicenseButton_Click(object sender, RoutedEventArgs e)
+        private async void VerifyLifetimeLicenseButton_Click(object sender, RoutedEventArgs e)
         {
-            LoadLifetimeProLicense();
-            SetStatus(_isLifetimeProUnlocked
-                ? "Ömür boyu lisans doğrulandı."
-                : "Kayıtlı geçerli lisans bulunamadı.");
+            var key = ProLifetimeKeyBox.Text.Trim().ToUpperInvariant();
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                SetStatus("Önce lisans anahtarı girin.");
+                return;
+            }
+
+            await ActivateOrVerifyLifetimeLicenseAsync(key, userInitiated: true, showSuccessMessage: false);
         }
 
-        private void UpdateProLicenseUi()
+        private async Task TryValidateStoredLicenseAsync()
+        {
+            var key = ProLifetimeKeyBox.Text.Trim().ToUpperInvariant();
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                return;
+            }
+
+            await ActivateOrVerifyLifetimeLicenseAsync(key, userInitiated: false, showSuccessMessage: false);
+        }
+
+        private async Task ActivateOrVerifyLifetimeLicenseAsync(string key, bool userInitiated, bool showSuccessMessage)
+        {
+            try
+            {
+                var request = new LicenseActivationRequest
+                {
+                    LicenseKey = key,
+                    MachineFingerprint = BuildMachineFingerprint(),
+                    AppVersion = GetApplicationVersion(),
+                };
+
+                var response = await LicenseApiClient.PostAsJsonAsync("/api/v1/license/activate", request);
+                var payload = await response.Content.ReadFromJsonAsync<LicenseActivationResponse>();
+
+                if (!response.IsSuccessStatusCode || payload == null || !payload.IsValid)
+                {
+                    _isLifetimeProUnlocked = false;
+                    UpdateProLicenseUi(payload?.Message ?? "Lisans doğrulanamadı.");
+                    if (userInitiated)
+                    {
+                        MessageBox.Show(this, payload?.Message ?? "Lisans doğrulanamadı. Lütfen anahtarınızı kontrol edin.", "Lisans Doğrulama", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    }
+
+                    SaveLifetimeProLicense(new ProLifetimeLicense
+                    {
+                        LicenseKey = key,
+                        LastValidationSucceeded = false,
+                        LastValidatedAtUtc = DateTime.UtcNow,
+                    });
+                    SetStatus("Pro lisans doğrulanamadı.");
+                    return;
+                }
+
+                _isLifetimeProUnlocked = true;
+                SaveLifetimeProLicense(new ProLifetimeLicense
+                {
+                    LicenseKey = key,
+                    LicenseId = payload.LicenseId,
+                    PlanName = payload.PlanName,
+                    LastValidationSucceeded = true,
+                    LastValidatedAtUtc = DateTime.UtcNow,
+                    ActivatedAt = DateTime.Now,
+                });
+
+                UpdateProLicenseUi($"Plan: {payload.PlanName}");
+                SetStatus("Ömür boyu Pro lisansı doğrulandı.");
+
+                if (userInitiated && showSuccessMessage)
+                {
+                    MessageBox.Show(this, "Lisans doğrulandı ve Pro+ özellikler açıldı.", "Lisans", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                AppendLog($"Lisans doğrulama hatası: {ex.Message}");
+                if (userInitiated)
+                {
+                    MessageBox.Show(this, "Lisans sunucusuna ulaşılamadı. İnternet bağlantınızı ve sunucu ayarını kontrol edin.", "Lisans Sunucusu", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+
+                UpdateProLicenseUi("Sunucuya erişilemedi.");
+                SetStatus("Lisans sunucusu yanıt vermiyor.");
+            }
+        }
+
+        private static string BuildMachineFingerprint()
+        {
+            return $"{Environment.MachineName}|{Environment.UserName}|{RuntimeInformation.OSDescription}";
+        }
+
+        private void OpenLifetimePurchasePageButton_Click(object sender, RoutedEventArgs e)
+        {
+            OpenUrl(LifetimePurchaseUrl);
+            SetStatus("Satın alma sayfası açıldı.");
+        }
+
+        private void UpdateProLicenseUi(string? detail = null)
         {
             ProLifetimeStatusText.Text = _isLifetimeProUnlocked
-                ? "Durum: Etkin (Ömür Boyu Pro Lisans)"
-                : "Durum: Etkin değil. Pro+ özellikler kilitli.";
+                ? $"Durum: Etkin (Ömür Boyu Pro Lisans){(string.IsNullOrWhiteSpace(detail) ? string.Empty : $" | {detail}")}"
+                : $"Durum: Etkin değil. Pro+ özellikler kilitli{(string.IsNullOrWhiteSpace(detail) ? string.Empty : $" | {detail}")}";
+
+            ActivateLifetimeProButton.IsEnabled = true;
+            VerifyLifetimeLicenseButton.IsEnabled = true;
+            PurchaseLifetimeProButton.IsEnabled = true;
         }
 
         private bool EnsureLifetimeProAccess(string featureName)
@@ -2857,7 +2951,7 @@ namespace TemizlikMasaUygulamasi
                 var versionText = GetApplicationVersion();
                 if (!Version.TryParse(versionText, out var currentVersion))
                 {
-                    currentVersion = new Version(3, 1, 4);
+                    currentVersion = new Version(3, 1, 5);
                 }
 
                 var result = await GitHubUpdateService.CheckLatestReleaseAsync(
@@ -3019,7 +3113,18 @@ namespace TemizlikMasaUygulamasi
         private static HttpClient CreateUpdateDownloadClient()
         {
             var client = new HttpClient();
-            client.DefaultRequestHeaders.Add("User-Agent", "TemizlikBakimMerkeziProfessional-Updater/3.1.4");
+            client.DefaultRequestHeaders.Add("User-Agent", "TemizlikBakimMerkeziProfessional-Updater/3.1.5");
+            return client;
+        }
+
+        private static HttpClient CreateLicenseApiClient()
+        {
+            var client = new HttpClient();
+            var configuredBaseUrl = Environment.GetEnvironmentVariable("TBM_LICENSE_API_URL");
+            var baseUrl = string.IsNullOrWhiteSpace(configuredBaseUrl) ? LicenseApiBaseUrl : configuredBaseUrl;
+            client.BaseAddress = new Uri(baseUrl, UriKind.Absolute);
+            client.Timeout = TimeSpan.FromSeconds(20);
+            client.DefaultRequestHeaders.Add("User-Agent", "TemizlikBakimMerkeziProfessional-Licensing/3.1.5");
             return client;
         }
 
@@ -3288,7 +3393,37 @@ namespace TemizlikMasaUygulamasi
         {
             public string LicenseKey { get; set; } = string.Empty;
 
+            public string LicenseId { get; set; } = string.Empty;
+
+            public string PlanName { get; set; } = "PRO_LIFETIME";
+
+            public bool LastValidationSucceeded { get; set; }
+
+            public DateTime LastValidatedAtUtc { get; set; }
+
             public DateTime ActivatedAt { get; set; }
+        }
+
+        private sealed class LicenseActivationRequest
+        {
+            public string LicenseKey { get; set; } = string.Empty;
+
+            public string MachineFingerprint { get; set; } = string.Empty;
+
+            public string AppVersion { get; set; } = string.Empty;
+        }
+
+        private sealed class LicenseActivationResponse
+        {
+            public bool IsValid { get; set; }
+
+            public string Message { get; set; } = string.Empty;
+
+            public string LicenseId { get; set; } = string.Empty;
+
+            public string PlanName { get; set; } = string.Empty;
+
+            public string[] Features { get; set; } = Array.Empty<string>();
         }
 
         private sealed class StartupTipItem

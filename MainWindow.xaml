@@ -461,6 +461,7 @@
                         <Border x:Name="ProLicenseBorder" CornerRadius="10" Padding="14" Margin="0,0,0,10">
                             <StackPanel>
                                 <TextBlock Text="Pro Ömür Boyu Lisans" FontSize="24" FontWeight="Bold" />
+                                <TextBlock Margin="0,8,0,0" TextWrapping="Wrap" Text="Bu ekranda yalnızca lisans etkinleştirme ve doğrulama işlemleri bulunur. Yönetim işlemleri ayrı sahip panelinde yürütülür." />
                                 <TextBlock x:Name="ProLifetimeStatusText" Margin="0,8,0,8" FontWeight="SemiBold" Text="Lisans durumu denetlenmedi." />
                                 <WrapPanel Margin="0,4,0,8" ItemHeight="42">
                                     <TextBlock Text="Lisans anahtarı:" VerticalAlignment="Center" Margin="0,0,8,0" />
@@ -468,7 +469,8 @@
                                 </WrapPanel>
                                 <WrapPanel ItemHeight="42" ItemWidth="260">
                                     <Button x:Name="ActivateLifetimeProButton" Content="_Ömür Boyu Lisansı Etkinleştir" Margin="0,0,8,0" Click="ActivateLifetimeProButton_Click" />
-                                    <Button x:Name="RestoreLifetimeLicenseButton" Content="_Lisansı Yeniden Yükle" Click="RestoreLifetimeLicenseButton_Click" />
+                                    <Button x:Name="VerifyLifetimeLicenseButton" Content="_Lisansı Doğrula" Margin="0,0,8,0" Click="VerifyLifetimeLicenseButton_Click" />
+                                    <Button x:Name="PurchaseLifetimeProButton" Content="_Satın Alma Sayfası" Click="OpenLifetimePurchasePageButton_Click" />
                                 </WrapPanel>
                             </StackPanel>
                         </Border>

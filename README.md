@@ -1,4 +1,4 @@
-# Temizlik ve Bakım Merkezi Professional v3.1.4
+# Temizlik ve Bakım Merkezi Professional v3.1.5
 
 Bu proje, `temizlik v2.cmd` mirasını modern, erişilebilir ve tam özellikli bir Windows masaüstü uygulamasına dönüştürür.
 
@@ -38,8 +38,19 @@ Bu proje, `temizlik v2.cmd` mirasını modern, erişilebilir ve tam özellikli b
 ## Pro Lisans Modeli
 
 - Pro+ özellikler `Ömür Boyu Lisans` etkinleştirildiğinde açılır.
-- Lisans, uygulama içinden anahtar girilerek etkinleştirilir ve yerel olarak doğrulanır.
+- Son kullanıcı uygulaması yalnızca lisans etkinleştirme/doğrulama ekranını gösterir.
+- Lisans doğrulaması sunucu tarafında yapılır (`LicensingServer`).
+- Lisans üretme, iptal etme, cihaz sıfırlama gibi sahip işlemleri uygulamada görünmez; ayrı admin API/panel üzerinden yönetilir.
+- Uygulama lisans sunucusunu `TBM_LICENSE_API_URL` ortam değişkeni ile özelleştirebilir.
 - Pro+ örnekleri: Akıllı bakım planı üretimi, kritik risk erken uyarı taraması, gelişmiş analiz modülleri.
+
+## Lisans Sunucusu
+
+- Sahip/yönetici işlemleri için ayrı servis: `LicensingServer`
+- Son kullanıcı endpoint'i: `POST /api/v1/license/activate`
+- Admin endpoint'leri: `/api/v1/admin/*` (`X-Admin-Token` ile korunur)
+- Ayrıntı: `LicensingServer/README.md`
+- Sahip operasyon rehberi: `OWNER_LISANS_YONETIMI.md`
 
 ## Eklenen 9 Yeni Özellik
 
@@ -81,7 +92,7 @@ cd ./TemizlikMasaUygulamasi
 Üretilen dosyalar:
 
 - Self-contained yayın: `publish/win-x64/TemizlikMasaUygulamasi.exe`
-- Kurulum dosyası: `artifacts/setup/TemizlikBakimMerkezi-Professional-v3_1_4-Setup.exe`
+- Kurulum dosyası: `artifacts/setup/TemizlikBakimMerkezi-Professional-v3_1_5-Setup.exe`
 
 ## GitHub Üzerinden Güncelleme
 

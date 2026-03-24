@@ -322,9 +322,9 @@
                                 <TextBlock Text="Günlük Otomatik Çalıştırma" FontSize="24" FontWeight="Bold" />
                                 <WrapPanel Margin="0,10,0,0" ItemHeight="42">
                                     <TextBlock Text="Saat:" VerticalAlignment="Center" Margin="0,0,8,0" />
-                                    <ComboBox x:Name="ScheduleHourBox" Width="80" Margin="0,0,16,0" />
+                                    <ComboBox x:Name="ScheduleHourBox" Width="80" Margin="0,0,16,0" AutomationProperties.Name="Zamanlama Saati" />
                                     <TextBlock Text="Dakika:" VerticalAlignment="Center" Margin="0,0,8,0" />
-                                    <ComboBox x:Name="ScheduleMinuteBox" Width="80" Margin="0,0,16,0" />
+                                    <ComboBox x:Name="ScheduleMinuteBox" Width="80" Margin="0,0,16,0" AutomationProperties.Name="Zamanlama Dakikası" />
                                     <Button Content="_Zamanlamayı Oluştur" Margin="0,0,8,0" Padding="8" Click="CreateSchedule_Click" />
                                     <Button Content="Z_amanlamayı Sil" Padding="8" Click="DeleteSchedule_Click" />
                                 </WrapPanel>
@@ -341,7 +341,7 @@
                                     <Button Content="_Servis Sağlığı" Margin="0,0,8,8" Padding="8" Click="AnalyzeCriticalServices_Click" />
                                     <Button Content="_Olay Günlüğü Özeti" Margin="0,0,8,8" Padding="8" Click="GenerateEventLogSummary_Click" />
                                 </WrapPanel>
-                                <TextBox x:Name="PreflightOutputBox" Height="160" IsReadOnly="True" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" FontFamily="Consolas" />
+                                <TextBox x:Name="PreflightOutputBox" Height="160" IsReadOnly="True" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" FontFamily="Consolas" AutomationProperties.Name="Ön uçuş ve ek tanılama çıktı alanı" />
                             </StackPanel>
                         </Border>
                     </StackPanel>
@@ -360,7 +360,7 @@
                         <StackPanel>
                             <TextBlock Text="Rapor Ayarları" FontSize="24" FontWeight="Bold" />
                             <TextBlock Margin="0,10,0,4" Text="Rapor Başlığı" />
-                            <TextBox x:Name="ReportTitleBox" Text="Temizlik ve Bakım Raporu v3" />
+                            <TextBox x:Name="ReportTitleBox" Text="Temizlik ve Bakım Raporu v3" AutomationProperties.Name="Rapor Başlığı" />
                             <CheckBox x:Name="IncludeSystemSnapshotInReport" Margin="0,8,0,0" IsChecked="True" Content="Rapora sistem özetini ekle" />
                             <WrapPanel Margin="0,10,0,0" ItemHeight="42" ItemWidth="220">
                                 <Button Content="_JSON Raporu Üret" Margin="0,0,8,0" Padding="8" Click="SaveJsonReportButton_Click" />
@@ -380,7 +380,7 @@
                                 <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
                                 <TextBlock Text="Rapor Önizlemesi" FontSize="24" FontWeight="Bold" />
-                            <TextBox x:Name="ReportPreviewBox" Grid.Row="1" Margin="0,10,0,0" IsReadOnly="True" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" FontFamily="Consolas" />
+                            <TextBox x:Name="ReportPreviewBox" Grid.Row="1" Margin="0,10,0,0" IsReadOnly="True" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" FontFamily="Consolas" AutomationProperties.Name="Rapor önizlemesi" />
                         </Grid>
                     </Border>
                 </Grid>
@@ -393,7 +393,7 @@
                             <StackPanel>
                                 <TextBlock Text="Erişilebilirlik ve WCAG AAA" FontSize="24" FontWeight="Bold" />
                                 <TextBlock Margin="0,10,0,4" Text="Yazı Boyutu" />
-                                <Slider x:Name="FontScaleSlider" Minimum="14" Maximum="34" Value="18" TickFrequency="1" IsSnapToTickEnabled="True" />
+                                <Slider x:Name="FontScaleSlider" Minimum="14" Maximum="34" Value="18" TickFrequency="1" IsSnapToTickEnabled="True" AutomationProperties.Name="Yazı Boyutu Kaydırıcısı" />
                                 <CheckBox x:Name="HighContrastModeCheck" Margin="0,10,0,0" Content="Yüksek kontrast modu (sadece uygulama)" />
                                 <CheckBox x:Name="ScreenReaderAnnouncementsCheck" Margin="0,6,0,0" IsChecked="True" Content="Ekran okuyucu canlı anonslarını etkin tut" />
                                 <WrapPanel Margin="0,12,0,0" ItemHeight="42" ItemWidth="220">
@@ -422,9 +422,9 @@
                                 <TextBlock Text="Olcay Aşçı Anısına" FontSize="24" FontWeight="Bold" />
                                 <TextBlock x:Name="ResearchSummaryText" Margin="0,10,0,0" TextWrapping="Wrap" />
                                 <TextBlock Margin="0,12,0,4" Text="Uzun İthaf Metni" FontWeight="SemiBold" />
-                                <TextBox x:Name="TributeLongNarrativeBox" Height="210" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
+                                <TextBox x:Name="TributeLongNarrativeBox" Height="210" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" AutomationProperties.Name="Uzun ithaf metni" />
                                 <TextBlock Margin="0,12,0,4" Text="Kaynaklar" FontWeight="SemiBold" />
-                                <ListBox x:Name="SourceList" Height="150">
+                                <ListBox x:Name="SourceList" Height="150" AutomationProperties.Name="Kaynaklar Listesi">
                                     <ListBoxItem Content="https://tr.linkedin.com/in/olcay-a%C5%9F%C3%A7%C4%B1-b0a619124" />
                                     <ListBoxItem Content="https://tr.linkedin.com/posts/olcay-a%C5%9F%C3%A7%C4%B1-b0a619124_eri%C5%9Filelilirlik-kavram%C4%B1n%C4%B1-ve-evrensel-tasar%C4%B1m%C4%B1-activity-6665135484022337536-UicK" />
                                     <ListBoxItem Content="https://tr.linkedin.com/posts/olcay-a%C5%9F%C3%A7%C4%B1-b0a619124_nvda-20203ten-m%C3%BCjdeler-activity-6704406346390888448-1cmP" />
@@ -438,11 +438,11 @@
                             <StackPanel>
                                 <TextBlock Text="İthaf Metnini Özelleştir" FontSize="24" FontWeight="Bold" />
                                 <TextBlock Margin="0,10,0,4" Text="Kişi" />
-                                <TextBox x:Name="TributePersonBox" Text="Olcay Aşçı" />
+                                <TextBox x:Name="TributePersonBox" Text="Olcay Aşçı" AutomationProperties.Name="İthaf Kişisi" />
                                 <TextBlock Margin="0,10,0,4" Text="Geçmişteki uygulama/girişim adı" />
-                                <TextBox x:Name="LegacyAppBox" Text="temizlik v2.cmd" />
+                                <TextBox x:Name="LegacyAppBox" Text="temizlik v2.cmd" AutomationProperties.Name="Geçmişteki uygulama adı" />
                                 <TextBlock Margin="0,10,0,4" Text="İthaf metni" />
-                                <TextBox x:Name="TributeMessageBox" Height="130" AcceptsReturn="True" TextWrapping="Wrap" />
+                                <TextBox x:Name="TributeMessageBox" Height="130" AcceptsReturn="True" TextWrapping="Wrap" AutomationProperties.Name="İthaf metni içeriği" />
                                 <WrapPanel Margin="0,10,0,0" ItemHeight="42" ItemWidth="220">
                                     <Button Content="_İthafı Uygula" Margin="0,0,8,0" Padding="8" Click="ApplyTributeButton_Click" />
                                     <Button Content="_İthafı Kalıcı Kaydet" Padding="8" Click="SaveTributeButton_Click" />
@@ -465,7 +465,7 @@
                                 <TextBlock x:Name="ProLifetimeStatusText" Margin="0,8,0,8" FontWeight="SemiBold" Text="Lisans durumu denetlenmedi." />
                                 <WrapPanel Margin="0,4,0,8" ItemHeight="42">
                                     <TextBlock Text="Lisans anahtarı:" VerticalAlignment="Center" Margin="0,0,8,0" />
-                                    <TextBox x:Name="ProLifetimeKeyBox" Width="360" Text="TBM-PRO-LIFETIME-XXXX-XXXX" />
+                                    <TextBox x:Name="ProLifetimeKeyBox" Width="360" Text="TBM-PRO-LIFETIME-XXXX-XXXX" AutomationProperties.Name="Lisans anahtarı" />
                                 </WrapPanel>
                                 <WrapPanel ItemHeight="42" ItemWidth="260">
                                     <Button x:Name="ActivateLifetimeProButton" Content="_Ömür Boyu Lisansı Etkinleştir" Margin="0,0,8,0" Click="ActivateLifetimeProButton_Click" />
@@ -494,7 +494,7 @@
                                     <Button Content="Ö_nerileri Uygula" Padding="8" Click="ApplyHealthRecommendations_Click" />
                                 </WrapPanel>
                                 <TextBlock x:Name="HealthScoreText" Text="Skor: Henüz hesaplanmadı" FontWeight="SemiBold" />
-                                <ListBox x:Name="HealthRecommendationsList" Margin="0,8,0,0" Height="120" />
+                                <ListBox x:Name="HealthRecommendationsList" Margin="0,8,0,0" Height="120" AutomationProperties.Name="Sağlık Önerileri Listesi" />
                             </StackPanel>
                         </Border>
 
@@ -503,7 +503,7 @@
                                 <TextBlock Text="Senaryo Motoru" FontSize="24" FontWeight="Bold" />
                                 <WrapPanel Margin="0,10,0,0" ItemHeight="42">
                                     <TextBlock Text="Profil:" VerticalAlignment="Center" Margin="0,0,8,0" />
-                                    <ComboBox x:Name="ScenarioPresetBox" Width="300" />
+                                    <ComboBox x:Name="ScenarioPresetBox" Width="300" AutomationProperties.Name="Senaryo Profili" />
                                     <Button Content="_Profili Uygula" Margin="8,0,0,0" Padding="8" Click="ApplyScenarioPreset_Click" />
                                 </WrapPanel>
                                 <TextBlock x:Name="ScenarioInfoText" Margin="0,8,0,0" />
@@ -515,15 +515,15 @@
                                 <TextBlock Text="Büyük Dosya Radar" FontSize="24" FontWeight="Bold" />
                                 <WrapPanel Margin="0,10,0,8" ItemHeight="42">
                                     <TextBlock Text="Kök klasör:" VerticalAlignment="Center" Margin="0,0,8,0" />
-                                    <TextBox x:Name="LargeFileScanPathBox" Width="430" />
+                                    <TextBox x:Name="LargeFileScanPathBox" Width="430" AutomationProperties.Name="Büyük dosya arama kök klasörü" />
                                 </WrapPanel>
                                 <WrapPanel Margin="0,0,0,8" ItemHeight="42">
                                     <TextBlock Text="Minimum MB:" VerticalAlignment="Center" Margin="0,0,8,0" />
-                                    <TextBox x:Name="LargeFileMinMbBox" Width="90" Text="100" />
+                                    <TextBox x:Name="LargeFileMinMbBox" Width="90" Text="100" AutomationProperties.Name="Minimum dosya boyutu megabayt cinsinden" />
                                     <Button Content="_Taramayı Başlat" Margin="8,0,8,0" Padding="8" Click="ScanLargeFiles_Click" />
                                     <Button Content="_CSV Dışa Aktar" Padding="8" Click="ExportLargeFilesCsv_Click" />
                                 </WrapPanel>
-                                <ListBox x:Name="LargeFilesList" Height="160" />
+                                <ListBox x:Name="LargeFilesList" Height="160" AutomationProperties.Name="Büyük Dosyalar Listesi" />
                             </StackPanel>
                         </Border>
 
@@ -532,11 +532,11 @@
                                 <TextBlock Text="Yedek ve Geri Dönüş Merkezi" FontSize="24" FontWeight="Bold" />
                                 <WrapPanel Margin="0,10,0,8" ItemHeight="42">
                                     <TextBlock Text="Kaynak:" VerticalAlignment="Center" Margin="0,0,8,0" />
-                                    <TextBox x:Name="BackupSourceBox" Width="430" />
+                                    <TextBox x:Name="BackupSourceBox" Width="430" AutomationProperties.Name="Yedekleme kaynak klasörü" />
                                 </WrapPanel>
                                 <WrapPanel Margin="0,0,0,8" ItemHeight="42">
                                     <TextBlock Text="Hedef:" VerticalAlignment="Center" Margin="0,0,8,0" />
-                                    <TextBox x:Name="BackupTargetBox" Width="430" />
+                                    <TextBox x:Name="BackupTargetBox" Width="430" AutomationProperties.Name="Yedekleme hedef klasörü" />
                                 </WrapPanel>
                                 <WrapPanel ItemHeight="42" ItemWidth="250">
                                     <Button Content="_Zip Yedek Oluştur" Margin="0,0,8,0" Padding="8" Click="CreateZipBackup_Click" />
@@ -552,7 +552,7 @@
                                     <Button Content="_Geçmişi Analiz Et" Margin="0,0,8,0" Padding="8" Click="AnalyzeReportHistory_Click" />
                                     <Button Content="_Trend Önerileri Yaz" Padding="8" Click="WriteTrendRecommendations_Click" />
                                 </WrapPanel>
-                                <TextBox x:Name="AnalyticsOutputBox" Height="160" IsReadOnly="True" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" FontFamily="Consolas" />
+                                <TextBox x:Name="AnalyticsOutputBox" Height="160" IsReadOnly="True" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" FontFamily="Consolas" AutomationProperties.Name="Analitik ve trend çıktısı" />
                             </StackPanel>
                         </Border>
 
@@ -561,7 +561,7 @@
                                 <TextBlock Text="Ağ Tanılama" FontSize="24" FontWeight="Bold" />
                                 <WrapPanel Margin="0,10,0,8" ItemHeight="42">
                                     <TextBlock Text="Host:" VerticalAlignment="Center" Margin="0,0,8,0" />
-                                    <TextBox x:Name="NetworkTestHostBox" Width="220" Text="1.1.1.1" />
+                                    <TextBox x:Name="NetworkTestHostBox" Width="220" Text="1.1.1.1" AutomationProperties.Name="Ağ testi yapılacak adres" />
                                     <Button Content="_Ağ Testi Çalıştır" Margin="8,0,8,0" Padding="8" Click="RunNetworkDiagnostics_Click" />
                                     <Button Content="_Tarayıcı Önbellek Temizle" Padding="8" Click="CleanBrowserCaches_Click" />
                                 </WrapPanel>
@@ -573,10 +573,10 @@
                                 <TextBlock Text="Klasör Boyut Analizi" FontSize="24" FontWeight="Bold" />
                                 <WrapPanel Margin="0,10,0,8" ItemHeight="42">
                                     <TextBlock Text="Kök klasör:" VerticalAlignment="Center" Margin="0,0,8,0" />
-                                    <TextBox x:Name="FolderSizeRootBox" Width="430" />
+                                    <TextBox x:Name="FolderSizeRootBox" Width="430" AutomationProperties.Name="Klasör boyutu analiz edilecek kök klasör" />
                                     <Button Content="_Analiz Et" Margin="8,0,0,0" Padding="8" Click="AnalyzeFolderSizes_Click" />
                                 </WrapPanel>
-                                <ListBox x:Name="FolderSizeList" Height="150" />
+                                <ListBox x:Name="FolderSizeList" Height="150" AutomationProperties.Name="Klasör Boyutları Listesi" />
                             </StackPanel>
                         </Border>
 

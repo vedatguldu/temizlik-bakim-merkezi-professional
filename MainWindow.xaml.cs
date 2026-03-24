@@ -313,8 +313,7 @@ namespace TemizlikMasaUygulamasi
                 _ => DashboardPanel,
             };
 
-            panel.Focus();
-            MoveFocus(new TraversalRequest(FocusNavigationDirection.First));
+            panel.MoveFocus(new TraversalRequest(FocusNavigationDirection.First));
         }
 
         private void BackToDashboardButton_Click(object sender, RoutedEventArgs e)
@@ -858,9 +857,13 @@ namespace TemizlikMasaUygulamasi
             {
                 token.ThrowIfCancellationRequested();
                 var result = SHEmptyRecycleBin(IntPtr.Zero, null, RecycleFlagNoConfirmation | RecycleFlagNoProgressUI | RecycleFlagNoSound);
-                if (result != 0)
+                if (result == 0)
                 {
-                    throw new InvalidOperationException($"Geri dönüşüm kutusu boşaltılamadı. Kod: 0x{result:X8}");
+                    AppendLog("Geri dönüşüm kutusu boşaltıldı.");
+                }
+                else
+                {
+                    AppendLog("Geri dönüşüm kutusu zaten boş veya boşaltılamadı.");
                 }
             }, token);
         }
@@ -886,23 +889,32 @@ namespace TemizlikMasaUygulamasi
             var softwareDistribution = Path.Combine(windowsPath, "SoftwareDistribution");
             var backupPath = Path.Combine(windowsPath, $"SoftwareDistribution.bak.{DateTime.Now:yyyyMMddHHmmss}");
 
-            await RunAndLogAsync("net", "stop wuauserv", token, false);
-            await RunAndLogAsync("net", "stop bits", token, false);
-
-            await Task.Run(() =>
+            try
             {
-                token.ThrowIfCancellationRequested();
-                if (Directory.Exists(softwareDistribution))
+                await RunAndLogAsync("net", "stop wuauserv", token, false);
+                await RunAndLogAsync("net", "stop bits", token, false);
+                await RunAndLogAsync("net", "stop cryptSvc", token, false);
+                await RunAndLogAsync("net", "stop msiserver", token, false);
+
+                await Task.Run(() =>
                 {
-                    Directory.Move(softwareDistribution, backupPath);
-                    AppendLog($"SoftwareDistribution yedeklendi: {backupPath}");
-                }
+                    token.ThrowIfCancellationRequested();
+                    if (Directory.Exists(softwareDistribution))
+                    {
+                        Directory.Move(softwareDistribution, backupPath);
+                        AppendLog($"SoftwareDistribution yedeklendi: {backupPath}");
+                    }
 
-                Directory.CreateDirectory(softwareDistribution);
-            }, token);
-
-            await RunAndLogAsync("net", "start bits", token, false);
-            await RunAndLogAsync("net", "start wuauserv", token, false);
+                    Directory.CreateDirectory(softwareDistribution);
+                }, token);
+            }
+            finally
+            {
+                await RunAndLogAsync("net", "start msiserver", token, false);
+                await RunAndLogAsync("net", "start cryptSvc", token, false);
+                await RunAndLogAsync("net", "start bits", token, false);
+                await RunAndLogAsync("net", "start wuauserv", token, false);
+            }
         }
 
         private async Task CleanBrowserCachesAsync(CancellationToken token)
@@ -1041,6 +1053,7 @@ namespace TemizlikMasaUygulamasi
             try
             {
                 await process.WaitForExitAsync(token);
+                process.WaitForExit(); // Ensure async output events are fully processed
             }
             catch (OperationCanceledException)
             {
@@ -2408,12 +2421,24 @@ namespace TemizlikMasaUygulamasi
                 digest.AppendLine($"Son durum: {StatusText.Text}");
                 digest.AppendLine($"İthaf: {_tributeConfig.PersonName}");
 
-                Clipboard.SetText(digest.ToString());
-                SetFeatureHubOutput("Panoya kopyalandı", new[]
+                try
                 {
-                    "Bakım özeti panoya kopyalandı.",
-                    "Dış uygulamalara yapıştırabilirsiniz.",
-                });
+                    Clipboard.SetText(digest.ToString());
+                    SetFeatureHubOutput("Panoya kopyalandı", new[]
+                    {
+                        "Bakım özeti panoya kopyalandı.",
+                        "Dış uygulamalara yapıştırabilirsiniz.",
+                    });
+                }
+                catch (Exception ex)
+                {
+                    SetFeatureHubOutput("Hata", new[]
+                    {
+                        "Pano kilitli olduğu için kopyalama başarısız oldu.",
+                        $"Detay: {ex.Message}",
+                    });
+                }
+
                 return Task.CompletedTask;
             });
         }
@@ -2901,21 +2926,35 @@ namespace TemizlikMasaUygulamasi
 
         private void OpenPath(string path)
         {
-            Process.Start(new ProcessStartInfo
+            try
             {
-                FileName = "explorer.exe",
-                Arguments = path,
-                UseShellExecute = true,
-            });
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "explorer.exe",
+                    Arguments = path,
+                    UseShellExecute = true,
+                });
+            }
+            catch (Exception ex)
+            {
+                AppendLog($"Klasör açılamadı ({path}): {ex.Message}");
+            }
         }
 
         private void OpenUrl(string url)
         {
-            Process.Start(new ProcessStartInfo
+            try
             {
-                FileName = url,
-                UseShellExecute = true,
-            });
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = url,
+                    UseShellExecute = true,
+                });
+            }
+            catch (Exception ex)
+            {
+                AppendLog($"Bağlantı açılamadı ({url}): {ex.Message}");
+            }
         }
 
         private void StartRecommendedFromDashboard_Click(object sender, RoutedEventArgs e)
